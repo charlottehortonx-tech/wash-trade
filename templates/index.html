@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trading Bot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d0f14;
+      --surface:  #161a24;
+      --border:   #252b3b;
+      --accent:   #3b82f6;
+      --green:    #22c55e;
+      --red:      #ef4444;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --radius:   12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 460px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    h1 { font-size: 18px; font-weight: 600; }
+    .subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Status pill ── */
+    .status-pill {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .status-pill.running { border-color: var(--green); color: var(--green); }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .status-pill.running .status-dot { background: var(--green); animation: pulse 1.4s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Form ── */
+    .field { margin-bottom: 20px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--muted); }
+
+    /* ── API key row ── */
+    .input-row {
+      display: flex; gap: 8px;
+    }
+    .input-row input { flex: 1; }
+    .eye-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0 12px;
+      font-size: 16px;
+      transition: color 0.15s;
+    }
+    .eye-btn:hover { color: var(--text); }
+
+    /* ── Mode toggle ── */
+    .mode-toggle {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .mode-toggle button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 9px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .mode-toggle button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* ── Amount row ── */
+    .amount-row {
+      display: flex; gap: 8px;
+    }
+    .amount-type {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .amount-type button {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 0 14px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .amount-type button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .amount-row input { flex: 1; }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* ── Start / Stop button ── */
+    #toggle-btn {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      padding: 14px;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    #toggle-btn:active { transform: scale(0.98); }
+    #toggle-btn.start { background: var(--green); color: #fff; }
+    #toggle-btn.stop  { background: var(--red);   color: #fff; }
+    #toggle-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Error / info toast ── */
+    .toast {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+    .toast.error { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+    .toast.info  { background: rgba(34,197,94,.12); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">⚡</div>
+    <div>
+      <h1>Trading Bot</h1>
+      <div class="subtitle">Signal → Buy → Wait → Sell</div>
+    </div>
+    <div class="status-pill" id="status-pill">
+      <div class="status-dot"></div>
+      <span id="status-label">Idle</span>
+    </div>
+  </div>
+
+  <!-- Mode -->
+  <div class="field">
+    <label>Mode</label>
+    <div class="mode-toggle">
+      <button class="active" data-mode="paper" onclick="setMode('paper')">Paper</button>
+      <button data-mode="live" onclick="setMode('live')">Live</button>
+    </div>
+  </div>
+
+  <!-- API Key (shown only in live mode) -->
+  <div class="field" id="api-section" style="display:none">
+    <label>API Key</label>
+    <div class="input-row">
+      <input type="password" id="api-key" placeholder="Paste your exchange API key" />
+      <button class="eye-btn" onclick="toggleEye('api-key', this)">👁</button>
+    </div>
+    <div style="margin-top:10px">
+      <label>API Secret</label>
+      <div class="input-row">
+        <input type="password" id="api-secret" placeholder="Paste your API secret" />
+        <button class="eye-btn" onclick="toggleEye('api-secret', this)">👁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Token -->
+  <div class="field">
+    <label>Token Focus</label>
+    <select id="token">
+      <option value="BTC/USDT">BTC / USDT</option>
+      <option value="ETH/USDT">ETH / USDT</option>
+      <option value="SOL/USDT">SOL / USDT</option>
+      <option value="BNB/USDT">BNB / USDT</option>
+      <option value="XRP/USDT">XRP / USDT</option>
+      <option value="DOGE/USDT">DOGE / USDT</option>
+    </select>
+  </div>
+
+  <!-- Delay -->
+  <div class="field">
+    <label>Delay between Buy → Sell</label>
+    <input type="number" id="delay" value="30" min="1" max="3600"
+           placeholder="Seconds" />
+  </div>
+
+  <!-- Amount -->
+  <div class="field">
+    <label>Trade Amount</label>
+    <div class="amount-row">
+      <div class="amount-type">
+        <button class="active" id="btn-fixed" onclick="setAmountType('fixed')">$</button>
+        <button id="btn-pct" onclick="setAmountType('percent')">%</button>
+      </div>
+      <input type="number" id="amount-value" value="100" min="1"
+             placeholder="Amount" />
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- Start / Stop -->
+  <button id="toggle-btn" class="start" onclick="toggleBot()">▶ Start Bot</button>
+
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script>
+  let mode = 'paper';
+  let amountType = 'fixed';
+  let polling;
+
+  /* ── Mode toggle ─────────────────────────────────────────────────── */
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-toggle button').forEach(b =>
+      b.classList.toggle('active', b.dataset.mode === m)
+    );
+    document.getElementById('api-section').style.display = m === 'live' ? 'block' : 'none';
+  }
+
+  /* ── Amount type ─────────────────────────────────────────────────── */
+  function setAmountType(t) {
+    amountType = t;
+    document.getElementById('btn-fixed').classList.toggle('active', t === 'fixed');
+    document.getElementById('btn-pct').classList.toggle('active', t === 'percent');
+    const input = document.getElementById('amount-value');
+    if (t === 'percent') {
+      input.max = 100;
+      if (parseFloat(input.value) > 100) input.value = 10;
+    } else {
+      input.max = 999999;
+    }
+  }
+
+  /* ── Eye toggle ──────────────────────────────────────────────────── */
+  function toggleEye(id, btn) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+
+  /* ── Toast ───────────────────────────────────────────────────────── */
+  function showToast(msg, type = 'error') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type}`;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 4000);
+  }
+
+  /* ── Status polling ──────────────────────────────────────────────── */
+  function updateStatus(data) {
+    const pill = document.getElementById('status-pill');
+    const label = document.getElementById('status-label');
+    const btn = document.getElementById('toggle-btn');
+
+    if (data.running) {
+      pill.className = 'status-pill running';
+      label.textContent = 'Running';
+      btn.className = 'stop';
+      btn.textContent = '■ Stop Bot';
+    } else {
+      pill.className = 'status-pill';
+      label.textContent = data.error ? 'Error' : 'Idle';
+      btn.className = 'start';
+      btn.textContent = '▶ Start Bot';
+      if (data.error) showToast(data.error);
+    }
+  }
+
+  async function pollStatus() {
+    try {
+      const r = await fetch('/status');
+      updateStatus(await r.json());
+    } catch (_) {}
+  }
+
+  /* ── Start / Stop ────────────────────────────────────────────────── */
+  async function toggleBot() {
+    const btn = document.getElementById('toggle-btn');
+    const isRunning = btn.classList.contains('stop');
+
+    btn.disabled = true;
+
+    if (isRunning) {
+      const r = await fetch('/stop', { method: 'POST' });
+      const d = await r.json();
+      if (!d.ok) showToast(d.error || 'Could not stop bot.');
+    } else {
+      const payload = {
+        mode,
+        api_key:      document.getElementById('api-key').value.trim(),
+        api_secret:   document.getElementById('api-secret').value.trim(),
+        token:        document.getElementById('token').value,
+        delay:        parseInt(document.getElementById('delay').value) || 30,
+        amount_type:  amountType,
+        amount_value: parseFloat(document.getElementById('amount-value').value) || 100,
+      };
+      const r = await fetch('/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const d = await r.json();
+      if (!d.ok) {
+        showToast(d.error || 'Could not start bot.');
+      } else {
+        showToast('Bot started in ' + mode + ' mode.', 'info');
+      }
+    }
+
+    btn.disabled = false;
+    pollStatus();
+  }
+
+  /* ── Init ────────────────────────────────────────────────────────── */
+  pollStatus();
+  setInterval(pollStatus, 3000);
+</script>
+</body>
+</html>

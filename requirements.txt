@@ -1,2 +1,3 @@
 pyyaml>=6.0
+flask>=3.0.0
 ccxt>=4.0.0          # only required for live mode
