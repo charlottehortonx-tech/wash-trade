@@ -1,0 +1,210 @@
+"""
+execution.py — Order placement, fill polling, retry logic, and the 30-second sell timer.
+
+Flow:
+    1. place_buy()        → submit market/limit buy, get Order
+    2. wait_for_fill()    → poll until fully filled or timeout/cancel
+    3. (caller waits 30s)
+    4. place_sell()       → submit sell for exact filled qty
+    5. wait_for_fill()    → poll until fully flat (handles partial fills)
+"""
+
+import time
+from dataclasses import dataclass
+from typing import Optional
+
+import logger
+from exchange_client import ExchangeClient, Order
+
+
+# ── Position snapshot ─────────────────────────────────────────────────────────
+
+@dataclass
+class Position:
+    symbol: str
+    filled_qty: float          # total base quantity bought
+    avg_buy_price: float       # average fill price
+    buy_fee: float
+    buy_order_id: str
+    fill_timestamp: float      # epoch seconds of confirmed fill
+
+
+# ── Execution engine ──────────────────────────────────────────────────────────
+
+class ExecutionEngine:
+
+    def __init__(self, cfg: dict, client: ExchangeClient) -> None:
+        ecfg = cfg.get("execution", {})
+        ex_cfg = cfg.get("exchange", {})
+
+        self._client = client
+        self._symbol: str = ex_cfg.get("symbol", "BTC/USDT")
+        self._order_type: str = ecfg.get("order_type", "market")
+        self._limit_slippage: float = float(
+            ecfg.get("limit_order_slippage_pct", 0.05)
+        ) / 100.0
+        self._fill_timeout: float = float(ecfg.get("fill_timeout_seconds", 60))
+        self._sell_retries: int = int(ecfg.get("sell_retry_attempts", 5))
+        self._sell_retry_delay: float = float(ecfg.get("sell_retry_delay_seconds", 3))
+        self._stale_timeout: float = float(ecfg.get("stale_order_timeout_seconds", 30))
+        self._sell_delay: float = float(
+            cfg.get("strategy", {}).get("sell_delay_seconds", 30)
+        )
+
+    # ── Internal helpers ──────────────────────────────────────────────────────
+
+    def _poll_until_filled(
+        self, order: Order, timeout: float, poll_interval: float = 1.0
+    ) -> Order:
+        """
+        Poll exchange until order is filled, cancelled, or timeout expires.
+        Returns the latest Order state.
+        """
+        # Short-circuit: exchange may return a terminal status from place_order itself.
+        if order.status in ("filled", "cancelled"):
+            return order
+
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            order = self._client.get_order(order.order_id, order.symbol)
+            if order.status == "filled":
+                return order
+            if order.status == "cancelled":
+                logger.warning(
+                    f"[Exec] Order {order.order_id} was cancelled externally."
+                )
+                return order
+            time.sleep(poll_interval)
+
+        # Timeout — cancel stale order
+        logger.warning(
+            f"[Exec] Order {order.order_id} timed out after {timeout}s — cancelling."
+        )
+        self._client.cancel_order(order.order_id, order.symbol)
+        logger.order_cancelled(order.order_id, "fill_timeout")
+        # Return last known state
+        return self._client.get_order(order.order_id, order.symbol)
+
+    def _compute_buy_price(self, book_mid: float, side: str = "buy") -> Optional[float]:
+        """For limit orders, offset mid-price by slippage allowance."""
+        if self._order_type != "limit":
+            return None
+        if side == "buy":
+            return round(book_mid * (1 + self._limit_slippage), 8)
+        else:
+            return round(book_mid * (1 - self._limit_slippage), 8)
+
+    # ── Public API ────────────────────────────────────────────────────────────
+
+    def place_buy(self, quantity: float, mid_price: float) -> Optional[Order]:
+        """Submit a BUY order. Returns Order or None if placement fails."""
+        price = self._compute_buy_price(mid_price, "buy")
+        try:
+            order = self._client.place_order(
+                symbol=self._symbol,
+                side="buy",
+                order_type=self._order_type,
+                quantity=quantity,
+                price=price,
+            )
+            logger.order_submitted(order.order_id, "buy", self._symbol, quantity, price)
+            return order
+        except Exception as exc:
+            logger.error("Failed to place BUY order", exc)
+            return None
+
+    def wait_for_buy_fill(self, order: Order) -> Optional[Position]:
+        """
+        Wait for the buy order to fill fully.
+        Returns a Position on success, None on timeout/cancel.
+        """
+        order = self._poll_until_filled(order, timeout=self._fill_timeout)
+        if order.status != "filled" and order.filled_qty == 0:
+            logger.error(
+                f"Buy order {order.order_id} not filled  status={order.status}"
+            )
+            return None
+
+        # Partial fill: treat filled portion as the position
+        pos = Position(
+            symbol=self._symbol,
+            filled_qty=order.filled_qty,
+            avg_buy_price=order.avg_fill_price,
+            buy_fee=order.fee,
+            buy_order_id=order.order_id,
+            fill_timestamp=time.time(),
+        )
+        logger.order_filled(
+            order.order_id, "buy", self._symbol,
+            order.filled_qty, order.avg_fill_price, order.fee,
+        )
+        return pos
+
+    def wait_sell_delay(self, position: Position) -> None:
+        """Block for exactly sell_delay_seconds after the fill timestamp."""
+        elapsed = time.time() - position.fill_timestamp
+        remaining = self._sell_delay - elapsed
+        if remaining > 0:
+            logger.sell_timer_started(int(remaining), position.filled_qty)
+            time.sleep(remaining)
+        else:
+            logger.info("[Exec] Sell delay already elapsed; proceeding immediately.")
+
+    def place_sell(
+        self, position: Position, mid_price: float
+    ) -> Optional[float]:
+        """
+        Place a SELL order for the exact filled quantity with retry logic.
+        Handles partial fills by re-selling the remaining amount.
+        Returns total sell fee on success, None on failure.
+        """
+        remaining_qty = position.filled_qty
+        total_fee = 0.0
+        total_proceeds = 0.0
+
+        for attempt in range(1, self._sell_retries + 1):
+            price = self._compute_buy_price(mid_price, "sell")
+            try:
+                order = self._client.place_order(
+                    symbol=self._symbol,
+                    side="sell",
+                    order_type=self._order_type,
+                    quantity=remaining_qty,
+                    price=price,
+                )
+                logger.order_submitted(
+                    order.order_id, "sell", self._symbol, remaining_qty, price
+                )
+            except Exception as exc:
+                logger.error(f"SELL placement failed (attempt {attempt})", exc)
+                if attempt < self._sell_retries:
+                    time.sleep(self._sell_retry_delay)
+                continue
+
+            order = self._poll_until_filled(order, timeout=self._fill_timeout)
+
+            if order.filled_qty > 0:
+                total_fee += order.fee
+                total_proceeds += order.filled_qty * order.avg_fill_price
+                remaining_qty = round(remaining_qty - order.filled_qty, 10)
+                logger.order_filled(
+                    order.order_id, "sell", self._symbol,
+                    order.filled_qty, order.avg_fill_price, order.fee,
+                )
+
+            if remaining_qty <= 0:
+                logger.info("[Exec] Fully flat — position closed.")
+                return total_fee
+
+            logger.warning(
+                f"[Exec] Partial sell  remaining={remaining_qty:.8f}  "
+                f"attempt={attempt}/{self._sell_retries}"
+            )
+            if attempt < self._sell_retries:
+                time.sleep(self._sell_retry_delay)
+
+        logger.error(
+            f"[Exec] Could not fully close position after {self._sell_retries} attempts. "
+            f"Remaining qty: {remaining_qty:.8f}"
+        )
+        return None

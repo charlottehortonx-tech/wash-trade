@@ -1,0 +1,73 @@
+{"ts": "2026-03-20T21:02:56.077687+00:00", "event": "error", "msg": "Failed to place BUY order", "exc": "network error"}
+{"ts": "2026-03-20T21:02:56.079513+00:00", "event": "order_submitted", "order_id": "o1", "side": "buy", "symbol": "BTC/USDT", "qty": 0.001, "price": null}
+{"ts": "2026-03-20T21:02:56.081432+00:00", "event": "order_cancelled", "order_id": "o1", "reason": "fill_timeout"}
+{"ts": "2026-03-20T21:02:56.081611+00:00", "event": "order_filled", "order_id": "o1", "side": "buy", "symbol": "BTC/USDT", "filled_qty": 0.005, "avg_price": 30000, "fee": 0.015}
+{"ts": "2026-03-20T21:02:56.083261+00:00", "event": "order_cancelled", "order_id": "o1", "reason": "fill_timeout"}
+{"ts": "2026-03-20T21:02:56.083409+00:00", "event": "error", "msg": "Buy order o1 not filled  status=open", "exc": null}
+{"ts": "2026-03-20T21:02:56.084858+00:00", "event": "order_filled", "order_id": "o1", "side": "buy", "symbol": "BTC/USDT", "filled_qty": 0.001, "avg_price": 30000.0, "fee": 0.03}
+{"ts": "2026-03-20T21:02:56.086405+00:00", "event": "order_submitted", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "qty": 0.001, "price": null}
+{"ts": "2026-03-20T21:02:57.087178+00:00", "event": "order_filled", "order_id": "s2", "side": "sell", "symbol": "BTC/USDT", "filled_qty": 0.0005, "avg_price": 30000.0, "fee": 0.015}
+{"ts": "2026-03-20T21:02:57.087731+00:00", "event": "order_submitted", "order_id": "s2", "side": "sell", "symbol": "BTC/USDT", "qty": 0.0005, "price": null}
+{"ts": "2026-03-20T21:02:57.202677+00:00", "event": "error", "msg": "SELL placement failed (attempt 1)", "exc": "timeout"}
+{"ts": "2026-03-20T21:02:57.203051+00:00", "event": "error", "msg": "SELL placement failed (attempt 2)", "exc": "timeout"}
+{"ts": "2026-03-20T21:02:57.203312+00:00", "event": "order_submitted", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "qty": 0.001, "price": null}
+{"ts": "2026-03-20T21:02:57.203482+00:00", "event": "order_filled", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "filled_qty": 0.001, "avg_price": 30000.0, "fee": 0.03}
+{"ts": "2026-03-20T21:02:57.205157+00:00", "event": "error", "msg": "SELL placement failed (attempt 1)", "exc": "always fails"}
+{"ts": "2026-03-20T21:02:57.205444+00:00", "event": "error", "msg": "SELL placement failed (attempt 2)", "exc": "always fails"}
+{"ts": "2026-03-20T21:02:57.205706+00:00", "event": "error", "msg": "SELL placement failed (attempt 3)", "exc": "always fails"}
+{"ts": "2026-03-20T21:02:57.205817+00:00", "event": "error", "msg": "[Exec] Could not fully close position after 3 attempts. Remaining qty: 0.00100000", "exc": null}
+{"ts": "2026-03-20T21:02:57.207969+00:00", "event": "order_submitted", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "qty": 0.001, "price": null}
+{"ts": "2026-03-20T21:02:57.208170+00:00", "event": "order_filled", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "filled_qty": 0.001, "avg_price": 30000.0, "fee": 0.03}
+{"ts": "2026-03-20T21:02:57.214389+00:00", "event": "risk_rejected", "reason": "balance_too_low (10.00 < 50.0)"}
+{"ts": "2026-03-20T21:02:57.216314+00:00", "event": "risk_rejected", "reason": "open_position_exists"}
+{"ts": "2026-03-20T21:02:57.218237+00:00", "event": "risk_rejected", "reason": "position_too_large (100.00 > 50.0)"}
+{"ts": "2026-03-20T21:02:57.221411+00:00", "event": "risk_rejected", "reason": "daily_loss_limit_hit (-150.00 <= -100.0)"}
+{"ts": "2026-03-20T21:02:57.223298+00:00", "event": "risk_rejected", "reason": "cooldown_active (600s remaining)"}
+{"ts": "2026-03-20T21:02:57.226305+00:00", "event": "risk_rejected", "reason": "max_trades_per_hour (3 >= 3)"}
+{"ts": "2026-03-20T21:02:57.227966+00:00", "event": "risk_rejected", "reason": "insufficient_liquidity  ask_depth=2  bid_depth=1  threshold=1000000.0"}
+{"ts": "2026-03-20T21:02:57.229604+00:00", "event": "risk_rejected", "reason": "position_too_large (3000.00 > 500.0)"}
+{"ts": "2026-03-20T21:02:57.233330+00:00", "event": "signal_received", "symbol": "BTC/USDT", "price": 30000.0}
+{"ts": "2026-03-20T21:02:57.235508+00:00", "event": "signal_received", "symbol": "BTC/USDT", "price": 30000.0}
+{"ts": "2026-03-20T21:02:57.235748+00:00", "event": "error", "msg": "[Strategy] Buy not filled \u2014 aborting cycle.", "exc": null}
+{"ts": "2026-03-20T21:02:57.237881+00:00", "event": "signal_received", "symbol": "BTC/USDT", "price": 30000.0}
+{"ts": "2026-03-20T21:02:57.238200+00:00", "event": "trade_completed", "symbol": "BTC/USDT", "qty": 0.001, "buy_price": 30000.0, "sell_price": 30000.0, "buy_fee": 0.03, "sell_fee": 0.03, "realized_pnl": -0.06}
+{"ts": "2026-03-20T21:02:57.239952+00:00", "event": "risk_rejected", "reason": "balance_too_low (10.00 < 50.0)"}
+{"ts": "2026-03-20T21:02:57.242013+00:00", "event": "signal_received", "symbol": "BTC/USDT", "price": 30000.0}
+{"ts": "2026-03-20T21:02:57.242315+00:00", "event": "trade_completed", "symbol": "BTC/USDT", "qty": 0.001, "buy_price": 30000.0, "sell_price": 30000.0, "buy_fee": 0.03, "sell_fee": 0.03, "realized_pnl": -0.06}
+{"ts": "2026-03-20T21:03:40.302294+00:00", "event": "error", "msg": "Failed to place BUY order", "exc": "network error"}
+{"ts": "2026-03-20T21:03:40.304250+00:00", "event": "order_submitted", "order_id": "o1", "side": "buy", "symbol": "BTC/USDT", "qty": 0.001, "price": null}
+{"ts": "2026-03-20T21:03:40.306535+00:00", "event": "order_cancelled", "order_id": "o1", "reason": "fill_timeout"}
+{"ts": "2026-03-20T21:03:40.306727+00:00", "event": "order_filled", "order_id": "o1", "side": "buy", "symbol": "BTC/USDT", "filled_qty": 0.005, "avg_price": 30000, "fee": 0.015}
+{"ts": "2026-03-20T21:03:40.308459+00:00", "event": "order_cancelled", "order_id": "o1", "reason": "fill_timeout"}
+{"ts": "2026-03-20T21:03:40.308618+00:00", "event": "error", "msg": "Buy order o1 not filled  status=open", "exc": null}
+{"ts": "2026-03-20T21:03:40.310006+00:00", "event": "order_filled", "order_id": "o1", "side": "buy", "symbol": "BTC/USDT", "filled_qty": 0.001, "avg_price": 30000.0, "fee": 0.03}
+{"ts": "2026-03-20T21:03:40.312175+00:00", "event": "order_submitted", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "qty": 0.001, "price": null}
+{"ts": "2026-03-20T21:03:41.313098+00:00", "event": "order_filled", "order_id": "s2", "side": "sell", "symbol": "BTC/USDT", "filled_qty": 0.0005, "avg_price": 30000.0, "fee": 0.015}
+{"ts": "2026-03-20T21:03:41.313870+00:00", "event": "order_submitted", "order_id": "s2", "side": "sell", "symbol": "BTC/USDT", "qty": 0.0005, "price": null}
+{"ts": "2026-03-20T21:03:41.314124+00:00", "event": "order_filled", "order_id": "s2", "side": "sell", "symbol": "BTC/USDT", "filled_qty": 0.0005, "avg_price": 30000.0, "fee": 0.015}
+{"ts": "2026-03-20T21:03:41.317094+00:00", "event": "error", "msg": "SELL placement failed (attempt 1)", "exc": "timeout"}
+{"ts": "2026-03-20T21:03:41.317516+00:00", "event": "error", "msg": "SELL placement failed (attempt 2)", "exc": "timeout"}
+{"ts": "2026-03-20T21:03:41.317915+00:00", "event": "order_submitted", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "qty": 0.001, "price": null}
+{"ts": "2026-03-20T21:03:41.318149+00:00", "event": "order_filled", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "filled_qty": 0.001, "avg_price": 30000.0, "fee": 0.03}
+{"ts": "2026-03-20T21:03:41.320821+00:00", "event": "error", "msg": "SELL placement failed (attempt 1)", "exc": "always fails"}
+{"ts": "2026-03-20T21:03:41.321194+00:00", "event": "error", "msg": "SELL placement failed (attempt 2)", "exc": "always fails"}
+{"ts": "2026-03-20T21:03:41.321595+00:00", "event": "error", "msg": "SELL placement failed (attempt 3)", "exc": "always fails"}
+{"ts": "2026-03-20T21:03:41.321830+00:00", "event": "error", "msg": "[Exec] Could not fully close position after 3 attempts. Remaining qty: 0.00100000", "exc": null}
+{"ts": "2026-03-20T21:03:41.324169+00:00", "event": "order_submitted", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "qty": 0.001, "price": null}
+{"ts": "2026-03-20T21:03:41.324423+00:00", "event": "order_filled", "order_id": "s1", "side": "sell", "symbol": "BTC/USDT", "filled_qty": 0.001, "avg_price": 30000.0, "fee": 0.03}
+{"ts": "2026-03-20T21:03:41.332428+00:00", "event": "risk_rejected", "reason": "balance_too_low (10.00 < 50.0)"}
+{"ts": "2026-03-20T21:03:41.334230+00:00", "event": "risk_rejected", "reason": "open_position_exists"}
+{"ts": "2026-03-20T21:03:41.336222+00:00", "event": "risk_rejected", "reason": "position_too_large (100.00 > 50.0)"}
+{"ts": "2026-03-20T21:03:41.340579+00:00", "event": "risk_rejected", "reason": "daily_loss_limit_hit (-150.00 <= -100.0)"}
+{"ts": "2026-03-20T21:03:41.343281+00:00", "event": "risk_rejected", "reason": "cooldown_active (600s remaining)"}
+{"ts": "2026-03-20T21:03:41.347081+00:00", "event": "risk_rejected", "reason": "max_trades_per_hour (3 >= 3)"}
+{"ts": "2026-03-20T21:03:41.349068+00:00", "event": "risk_rejected", "reason": "insufficient_liquidity  ask_depth=2  bid_depth=1  threshold=1000000.0"}
+{"ts": "2026-03-20T21:03:41.351251+00:00", "event": "risk_rejected", "reason": "position_too_large (3000.00 > 500.0)"}
+{"ts": "2026-03-20T21:03:41.355873+00:00", "event": "signal_received", "symbol": "BTC/USDT", "price": 30000.0}
+{"ts": "2026-03-20T21:03:41.358431+00:00", "event": "signal_received", "symbol": "BTC/USDT", "price": 30000.0}
+{"ts": "2026-03-20T21:03:41.358713+00:00", "event": "error", "msg": "[Strategy] Buy not filled \u2014 aborting cycle.", "exc": null}
+{"ts": "2026-03-20T21:03:41.361928+00:00", "event": "signal_received", "symbol": "BTC/USDT", "price": 30000.0}
+{"ts": "2026-03-20T21:03:41.362461+00:00", "event": "trade_completed", "symbol": "BTC/USDT", "qty": 0.001, "buy_price": 30000.0, "sell_price": 30000.0, "buy_fee": 0.03, "sell_fee": 0.03, "realized_pnl": -0.06}
+{"ts": "2026-03-20T21:03:41.365526+00:00", "event": "risk_rejected", "reason": "balance_too_low (10.00 < 50.0)"}
+{"ts": "2026-03-20T21:03:41.367975+00:00", "event": "signal_received", "symbol": "BTC/USDT", "price": 30000.0}
+{"ts": "2026-03-20T21:03:41.368309+00:00", "event": "trade_completed", "symbol": "BTC/USDT", "qty": 0.001, "buy_price": 30000.0, "sell_price": 30000.0, "buy_fee": 0.03, "sell_fee": 0.03, "realized_pnl": -0.06}

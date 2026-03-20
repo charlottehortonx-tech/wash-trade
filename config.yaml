@@ -1,0 +1,63 @@
+# ============================================================
+# Crypto Trading Bot — Configuration
+# ============================================================
+# API keys are read from environment variables, NOT from here.
+# ENV VARS:  EXCHANGE_API_KEY  /  EXCHANGE_API_SECRET  /  EXCHANGE_PASSWORD (optional)
+
+# ── Exchange ─────────────────────────────────────────────────
+exchange:
+  name: "binance"          # ccxt exchange id (paper mode ignores this)
+  symbol: "BTC/USDT"
+  market_type: "spot"      # spot | futures
+
+# ── Mode ─────────────────────────────────────────────────────
+mode: "paper"              # paper | live
+
+# ── Strategy ─────────────────────────────────────────────────
+strategy:
+  sell_delay_seconds: 30          # seconds to wait after buy fill before selling
+  allow_overlapping_positions: false
+  signal_poll_interval_seconds: 5 # how often to call get_buy_signal()
+
+# ── Order Execution ───────────────────────────────────────────
+execution:
+  order_type: "market"            # market | limit
+  limit_order_slippage_pct: 0.05  # for limit orders: price offset from mid
+  fill_timeout_seconds: 60        # cancel order if not filled within this time
+  sell_retry_attempts: 5
+  sell_retry_delay_seconds: 3
+  stale_order_timeout_seconds: 30
+
+# ── Risk Management ───────────────────────────────────────────
+risk:
+  max_position_size_usd: 500.0     # max single trade size in quote currency
+  max_daily_loss_usd: 200.0        # bot stops for the day if realized loss exceeds this
+  max_trades_per_hour: 10
+  consecutive_loss_cooldown_seconds: 300  # cooldown after 3 losses in a row
+  consecutive_losses_threshold: 3
+  min_balance_usd: 50.0            # refuse to trade below this balance
+  min_order_book_depth_usd: 10000  # minimum bid/ask depth at top levels
+  max_slippage_pct: 0.30           # reject if estimated slippage > 0.30%
+  max_fee_pct: 0.20                # reject if estimated fees > 0.20% of trade
+
+# ── Fees ─────────────────────────────────────────────────────
+fees:
+  taker_pct: 0.10    # % taker fee (e.g. 0.10 = 0.10%)
+  maker_pct: 0.08
+
+# ── Logging ──────────────────────────────────────────────────
+logging:
+  level: "INFO"           # DEBUG | INFO | WARNING | ERROR
+  log_file: "bot.log"
+  rotate_bytes: 10485760  # 10 MB
+  backup_count: 5
+
+# ── Paper Trading Simulator ───────────────────────────────────
+paper:
+  initial_balance_usd: 10000.0
+  initial_balance_btc: 0.0
+  fill_probability: 1.0           # 1.0 = always fill in paper mode
+  simulated_taker_fee_pct: 0.10
+  simulated_price_source: "random_walk"  # random_walk | fixed
+  fixed_price: 30000.0
+  random_walk_volatility_pct: 0.05       # per tick price drift

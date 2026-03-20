@@ -1,0 +1,180 @@
+"""
+strategy.py — Signal generation and trade orchestration.
+
+`get_buy_signal()` is the single entry point for external signals.
+Replace or extend it with your own data source (websocket, REST poll,
+ML model output, etc.).
+
+The `Strategy` class ties together signal → risk check → buy → wait → sell.
+"""
+
+import time
+from dataclasses import dataclass
+from typing import Optional
+
+import logger
+from exchange_client import ExchangeClient, OrderBook
+from execution import ExecutionEngine, Position
+from risk_manager import RiskManager
+
+
+# ── Signal ────────────────────────────────────────────────────────────────────
+
+@dataclass
+class BuySignal:
+    symbol: str
+    suggested_quantity_base: float   # base asset quantity (e.g. BTC)
+    source: str = "external"         # label for logging
+
+
+def get_buy_signal(symbol: str, order_book: OrderBook) -> Optional[BuySignal]:
+    """
+    External signal hook.  Replace this implementation with your own logic.
+
+    Receives the current order book so the signal can be price-aware.
+    Returns a BuySignal when conditions are met, None otherwise.
+
+    Current placeholder: fires a signal roughly once every 10 calls
+    (for demo / paper-trading purposes).
+    """
+    import random
+    if random.random() < 0.10:          # 10% chance per poll — replace with real logic
+        mid = order_book.mid_price
+        # Size: $100 worth at current price (capped to sensible default)
+        qty = round(100.0 / mid, 8) if mid > 0 else 0.001
+        return BuySignal(symbol=symbol, suggested_quantity_base=qty)
+    return None
+
+
+# ── Strategy orchestrator ─────────────────────────────────────────────────────
+
+class Strategy:
+
+    def __init__(
+        self,
+        cfg: dict,
+        client: ExchangeClient,
+        risk: RiskManager,
+        engine: ExecutionEngine,
+    ) -> None:
+        self._cfg = cfg
+        self._client = client
+        self._risk = risk
+        self._engine = engine
+        self._symbol: str = cfg.get("exchange", {}).get("symbol", "BTC/USDT")
+        self._allow_overlap: bool = bool(
+            cfg.get("strategy", {}).get("allow_overlapping_positions", False)
+        )
+        self._poll_interval: float = float(
+            cfg.get("strategy", {}).get("signal_poll_interval_seconds", 5)
+        )
+
+    # ── Single trade cycle ────────────────────────────────────────────────────
+
+    def run_trade_cycle(self, signal: BuySignal, book: OrderBook) -> bool:
+        """
+        Execute one complete buy → wait → sell cycle.
+        Returns True if the trade completed successfully.
+        """
+        mid = book.mid_price
+        qty = signal.suggested_quantity_base
+
+        # ── 1. Risk check ─────────────────────────────────────────────────────
+        ok, reason = self._risk.check_all(
+            symbol=self._symbol,
+            order_book=book,
+            quantity_base=qty,
+            mid_price=mid,
+            allow_overlapping=self._allow_overlap,
+        )
+        if not ok:
+            logger.info(f"[Strategy] Trade skipped  reason={reason}")
+            return False
+
+        self._risk.set_position_open()
+
+        # ── 2. Place BUY ──────────────────────────────────────────────────────
+        signal_time = time.time()
+        logger.signal_received(self._symbol, mid)
+
+        buy_order = self._engine.place_buy(qty, mid)
+        if buy_order is None:
+            self._risk.set_position_closed(realized_pnl=0.0)
+            return False
+
+        # ── 3. Wait for fill ──────────────────────────────────────────────────
+        position: Optional[Position] = self._engine.wait_for_buy_fill(buy_order)
+        if position is None or position.filled_qty <= 0:
+            logger.error("[Strategy] Buy not filled — aborting cycle.")
+            self._risk.set_position_closed(realized_pnl=0.0)
+            return False
+
+        # ── 4. 30-second delay (starts at fill, not submission) ───────────────
+        self._engine.wait_sell_delay(position)
+
+        # ── 5. Refresh book for sell ──────────────────────────────────────────
+        try:
+            fresh_book = self._client.get_order_book(self._symbol)
+            sell_mid = fresh_book.mid_price
+        except Exception:
+            sell_mid = mid  # fallback
+
+        # ── 6. Place SELL ─────────────────────────────────────────────────────
+        sell_fee = self._engine.place_sell(position, sell_mid)
+        if sell_fee is None:
+            logger.error("[Strategy] Failed to close position — manual intervention needed.")
+            # Still mark closed in risk manager to unblock next trades after cooldown
+            self._risk.set_position_closed(realized_pnl=-9999.0)
+            return False
+
+        # ── 7. PnL accounting ─────────────────────────────────────────────────
+        sell_price = sell_mid   # best approximation without order receipt
+        realized_pnl = (
+            (sell_price - position.avg_buy_price) * position.filled_qty
+            - position.buy_fee
+            - sell_fee
+        )
+        logger.trade_completed(
+            symbol=self._symbol,
+            buy_price=position.avg_buy_price,
+            sell_price=sell_price,
+            qty=position.filled_qty,
+            buy_fee=position.buy_fee,
+            sell_fee=sell_fee,
+            realized_pnl=realized_pnl,
+        )
+        self._risk.set_position_closed(realized_pnl=realized_pnl)
+        return True
+
+    # ── Main polling loop ─────────────────────────────────────────────────────
+
+    def run_forever(self, stop_event=None) -> None:
+        """
+        Poll for signals and execute trade cycles until interrupted
+        or stop_event is set (threading.Event).
+        """
+        logger.info(
+            f"[Strategy] Starting signal loop  symbol={self._symbol}  "
+            f"poll={self._poll_interval}s"
+        )
+        while True:
+            if stop_event is not None and stop_event.is_set():
+                logger.info("[Strategy] Stop event received — shutting down.")
+                break
+            try:
+                book = self._client.get_order_book(self._symbol)
+                signal = get_buy_signal(self._symbol, book)
+                if signal:
+                    logger.info(
+                        f"[Strategy] Signal received  qty={signal.suggested_quantity_base}"
+                    )
+                    self.run_trade_cycle(signal, book)
+                else:
+                    logger.debug("[Strategy] No signal this tick.")
+            except KeyboardInterrupt:
+                logger.info("[Strategy] KeyboardInterrupt — shutting down.")
+                break
+            except Exception as exc:
+                logger.error("[Strategy] Unexpected error in main loop", exc)
+
+            time.sleep(self._poll_interval)

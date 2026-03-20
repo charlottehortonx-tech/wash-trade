@@ -1,0 +1,2 @@
+pyyaml>=6.0
+ccxt>=4.0.0          # only required for live mode
