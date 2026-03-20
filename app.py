@@ -141,6 +141,28 @@ def start():
     return jsonify({"ok": True})
 
 
+@app.route("/events")
+def events():
+    """Return last N lines from the JSONL event log."""
+    import json as _json
+    n = int(request.args.get("n", 40))
+    path = "bot_events.jsonl"
+    lines = []
+    try:
+        with open(path) as fh:
+            lines = fh.readlines()
+    except FileNotFoundError:
+        pass
+    rows = []
+    for raw in lines[-n:]:
+        try:
+            rows.append(_json.loads(raw))
+        except Exception:
+            pass
+    rows.reverse()
+    return jsonify(rows)
+
+
 @app.route("/stop", methods=["POST"])
 def stop():
     global _bot_status
