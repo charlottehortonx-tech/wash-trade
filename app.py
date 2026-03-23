@@ -195,6 +195,15 @@ def force_buy():
             cfg["strategy"]["sell_delay_seconds"] = running_cfg.get("delay", 45)
             cfg["strategy"]["profit_target_pct"] = running_cfg.get("profit_target", 0.5)
             cfg["strategy"]["limit_sell_offset_pct"] = running_cfg.get("limit_sell_offset", 0.1)
+            amount_type = running_cfg.get("amount_type", "fixed")
+            amount_value = float(running_cfg.get("amount_value", 100))
+            cfg["_ui"] = {
+                "amount_type": amount_type,
+                "amount_value": amount_value,
+                "percent": amount_value / 100.0,
+            }
+            if amount_type == "fixed":
+                cfg["risk"]["max_position_size_usd"] = amount_value
 
             client = build_client(cfg)
             risk = RiskManager(cfg, client)
@@ -202,18 +211,10 @@ def force_buy():
 
             symbol = cfg["exchange"]["symbol"]
             book = client.get_order_book(symbol)
-            mid = book.mid_price
 
-            amount_type = running_cfg.get("amount_type", "fixed")
-            amount_value = float(running_cfg.get("amount_value", 100))
-            if amount_type == "percent":
-                balance = client.get_balance()
-                qty = round(balance * (amount_value / 100.0) / mid, 8) if mid > 0 else 0.0
-            else:
-                qty = round(amount_value / mid, 8) if mid > 0 else 0.0
-
-            signal = BuySignal(symbol=symbol, suggested_quantity_base=qty, source="force_buy")
             strat = Strategy(cfg, client, risk, engine)
+            qty = strat._calc_qty(book.mid_price)
+            signal = BuySignal(symbol=symbol, suggested_quantity_base=qty, source="force_buy")
             strat.run_trade_cycle(signal, book)
         except Exception as exc:
             logger.error("[App] Force buy failed", exc)
