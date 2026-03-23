@@ -1,4 +1,5 @@
 pyyaml>=6.0
 flask>=3.0.0
 waitress>=3.0.0      # production WSGI server (Windows-compatible)
-ccxt>=4.0.0          # only required for live mode
+requests>=2.31.0     # required by BinanceTH native client
+ccxt>=4.0.0          # only required for live/ccxt exchanges
