@@ -68,6 +68,24 @@ class Strategy:
         self._poll_interval: float = float(
             cfg.get("strategy", {}).get("signal_poll_interval_seconds", 5)
         )
+        ui_cfg = cfg.get("_ui", {})
+        self._amount_type: str = ui_cfg.get("amount_type", "fixed")
+        self._amount_value: float = float(ui_cfg.get("amount_value", 100.0))
+        self._amount_pct: float = float(ui_cfg.get("percent", 0.01))
+
+    # ── Quantity calculation ──────────────────────────────────────────────────
+
+    def _calc_qty(self, mid_price: float) -> float:
+        """Compute order quantity from configured amount type and value."""
+        if mid_price <= 0:
+            return 0.0
+        if self._amount_type == "percent":
+            try:
+                balance = self._client.get_balance()
+                return round(balance.quote * self._amount_pct / mid_price, 8)
+            except Exception:
+                return 0.0
+        return round(self._amount_value / mid_price, 8)
 
     # ── Single trade cycle ────────────────────────────────────────────────────
 
@@ -122,9 +140,12 @@ class Strategy:
         # ── 6. Place SELL ─────────────────────────────────────────────────────
         sell_fee = self._engine.place_sell(position, sell_mid)
         if sell_fee is None:
-            logger.error("[Strategy] Failed to close position — manual intervention needed.")
-            # Still mark closed in risk manager to unblock next trades after cooldown
-            self._risk.set_position_closed(realized_pnl=-9999.0)
+            logger.error(
+                "[Strategy] Failed to close position — bot halted. "
+                "Resolve the open position manually and restart."
+            )
+            # Do NOT clear the open-position flag. This keeps _has_open_position=True
+            # so check_all() will reject every future signal until the bot is restarted.
             return False
 
         # ── 7. PnL accounting ─────────────────────────────────────────────────
@@ -165,6 +186,7 @@ class Strategy:
                 book = self._client.get_order_book(self._symbol)
                 signal = get_buy_signal(self._symbol, book)
                 if signal:
+                    signal.suggested_quantity_base = self._calc_qty(book.mid_price)
                     logger.info(
                         f"[Strategy] Signal received  qty={signal.suggested_quantity_base}"
                     )

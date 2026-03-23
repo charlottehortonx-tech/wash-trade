@@ -96,6 +96,7 @@ def start():
     limit_sell_offset = float(data.get("limit_sell_offset", 0.1))
     amount_type = data.get("amount_type", "fixed")   # fixed | percent
     amount_value = float(data.get("amount_value", 100))
+    min_balance = float(data.get("min_balance", 50))
     mode = data.get("mode", "live")
 
     if mode == "live" and (not api_key or not api_secret):
@@ -126,6 +127,7 @@ def start():
     else:
         cfg["_ui"]["percent"] = amount_value / 100.0
 
+    cfg["risk"]["min_balance_usd"] = min_balance
     cfg["logging"]["level"] = "INFO"
 
     _stop_event.clear()
@@ -138,6 +140,7 @@ def start():
             "delay": delay,
             "profit_target": profit_target,
             "limit_sell_offset": limit_sell_offset,
+            "min_balance": min_balance,
             "amount_type": amount_type,
             "amount_value": amount_value,
             "mode": mode,
@@ -168,6 +171,56 @@ def events():
     except FileNotFoundError:
         pass
     return jsonify(rows)
+
+
+@app.route("/force_buy", methods=["POST"])
+def force_buy():
+    """Trigger an immediate market buy, bypassing the signal check."""
+    if not _bot_status["running"]:
+        return jsonify({"ok": False, "error": "Bot is not running."}), 400
+
+    def _do_force_buy():
+        try:
+            from exchange_client import build_client
+            from execution import ExecutionEngine
+            from risk_manager import RiskManager
+            from strategy import BuySignal, Strategy
+
+            with open(CONFIG_PATH) as fh:
+                cfg = yaml.safe_load(fh)
+
+            running_cfg = _bot_status.get("config", {})
+            cfg["mode"] = running_cfg.get("mode", cfg.get("mode", "paper"))
+            cfg["exchange"]["symbol"] = running_cfg.get("token", cfg["exchange"]["symbol"])
+            cfg["strategy"]["sell_delay_seconds"] = running_cfg.get("delay", 45)
+            cfg["strategy"]["profit_target_pct"] = running_cfg.get("profit_target", 0.5)
+            cfg["strategy"]["limit_sell_offset_pct"] = running_cfg.get("limit_sell_offset", 0.1)
+            amount_type = running_cfg.get("amount_type", "fixed")
+            amount_value = float(running_cfg.get("amount_value", 100))
+            cfg["_ui"] = {
+                "amount_type": amount_type,
+                "amount_value": amount_value,
+                "percent": amount_value / 100.0,
+            }
+            if amount_type == "fixed":
+                cfg["risk"]["max_position_size_usd"] = amount_value
+
+            client = build_client(cfg)
+            risk = RiskManager(cfg, client)
+            engine = ExecutionEngine(cfg, client)
+
+            symbol = cfg["exchange"]["symbol"]
+            book = client.get_order_book(symbol)
+
+            strat = Strategy(cfg, client, risk, engine)
+            qty = strat._calc_qty(book.mid_price)
+            signal = BuySignal(symbol=symbol, suggested_quantity_base=qty, source="force_buy")
+            strat.run_trade_cycle(signal, book)
+        except Exception as exc:
+            logger.error("[App] Force buy failed", exc)
+
+    threading.Thread(target=_do_force_buy, daemon=True).start()
+    return jsonify({"ok": True})
 
 
 @app.route("/stop", methods=["POST"])
