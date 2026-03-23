@@ -143,6 +143,18 @@ class ExecutionEngine:
             )
             return None
 
+        # BinanceTH sometimes returns cummulativeQuoteQty=0 even on a filled poll.
+        # Re-fetch once more to get the real avg fill price.
+        if order.avg_fill_price == 0.0 and order.filled_qty > 0:
+            try:
+                order = self._client.get_order(order.order_id, order.symbol)
+                logger.info(
+                    f"[Exec] Re-fetched buy fill price  "
+                    f"avg={order.avg_fill_price}  qty={order.filled_qty}"
+                )
+            except Exception as exc:
+                logger.error("Failed to re-fetch buy order fill price", exc)
+
         # Partial fill: treat filled portion as the position
         pos = Position(
             symbol=self._symbol,
@@ -182,7 +194,13 @@ class ExecutionEngine:
         Returns total sell fee on success, None on failure.
         """
         entry = position.avg_buy_price
-        gain_pct = (current_mid / entry - 1) * 100 if entry > 0 else 0.0
+        if entry <= 0:
+            logger.error(
+                f"[Exec] avg_buy_price is {entry} — cannot compute profit target. "
+                "Defaulting to limit sell to avoid accidental loss."
+            )
+            entry = current_mid  # sell at-market equivalent via limit at current price
+        gain_pct = (current_mid / entry - 1) * 100
 
         if current_mid >= entry * (1 + self._profit_target):
             sell_type = "market"
