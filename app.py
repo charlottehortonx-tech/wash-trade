@@ -93,7 +93,7 @@ def start():
 
     api_key = data.get("api_key", "").strip()
     api_secret = data.get("api_secret", "").strip()
-    exchange_name = data.get("exchange_name", "binance").strip()
+    exchange_name = data.get("exchange_name", "binanceth").strip()
     token = data.get("token", "BTC/USDT").strip()
     delay = int(data.get("delay", 45))
     profit_target = float(data.get("profit_target", 0.5))

@@ -7,8 +7,9 @@
 # ── Exchange ─────────────────────────────────────────────────
 exchange:
   name: "binanceth"        # use "binanceth" for BinanceTH native client; ccxt id otherwise
-  symbol: "BTC/THB"
+  symbol: "BTC/USDT"
   market_type: "spot"      # spot | futures
+  qty_step: 0.00001        # LOT_SIZE step for quantity rounding (BTC = 0.00001)
 
 # ── Mode ─────────────────────────────────────────────────────
 mode: "live"               # paper | live
