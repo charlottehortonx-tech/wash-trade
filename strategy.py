@@ -195,12 +195,12 @@ class Strategy:
 
     def run_forever(self, stop_event=None) -> None:
         """
-        Poll for signals and execute trade cycles until interrupted
-        or stop_event is set (threading.Event).
+        Continuously execute buy→sell cycles with a random 10–20 s cooldown
+        between cycles.  Runs until interrupted or stop_event is set.
         """
+        import random
         logger.info(
-            f"[Strategy] Starting signal loop  symbol={self._symbol}  "
-            f"poll={self._poll_interval}s"
+            f"[Strategy] Starting trade loop  symbol={self._symbol}"
         )
         while True:
             if stop_event is not None and stop_event.is_set():
@@ -208,19 +208,22 @@ class Strategy:
                 break
             try:
                 book = self._client.get_order_book(self._symbol)
-                signal = get_buy_signal(self._symbol, book)
-                if signal:
-                    signal.suggested_quantity_base = self._calc_qty(book.mid_price)
-                    logger.info(
-                        f"[Strategy] Signal received  qty={signal.suggested_quantity_base}"
-                    )
-                    self.run_trade_cycle(signal, book)
-                else:
-                    logger.debug("[Strategy] No signal this tick.")
+                qty = self._calc_qty(book.mid_price)
+                signal = BuySignal(
+                    symbol=self._symbol,
+                    suggested_quantity_base=qty,
+                    source="loop",
+                )
+                self.run_trade_cycle(signal, book)
             except KeyboardInterrupt:
                 logger.info("[Strategy] KeyboardInterrupt — shutting down.")
                 break
             except Exception as exc:
                 logger.error("[Strategy] Unexpected error in main loop", exc)
 
-            time.sleep(self._poll_interval)
+            if stop_event is not None and stop_event.is_set():
+                break
+
+            cooldown = random.uniform(10, 20)
+            logger.info(f"[Strategy] Cycle done — next trade in {cooldown:.1f}s")
+            time.sleep(cooldown)
