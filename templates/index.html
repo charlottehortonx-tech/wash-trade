@@ -223,26 +223,75 @@
         </div>
       </div>
 
-      <!-- Execution Timer -->
+      <!-- Sell Strategy -->
       <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
-        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Execution Timer</h3>
-        <div class="flex items-center gap-4">
-          <div class="flex-1 bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 flex items-center justify-between">
-            <span class="text-sm text-outline">Delay Time</span>
-            <span class="text-lg font-black tabular-nums text-on-surface">
-              <span id="delay-display">30</span><span class="text-xs text-outline font-normal ml-1">sec</span>
-            </span>
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Sell Strategy</h3>
+        <div class="space-y-3">
+
+          <!-- Sell Delay -->
+          <div class="flex items-center gap-4">
+            <div class="flex-1 bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 flex items-center justify-between">
+              <span class="text-sm text-outline">Sell Delay</span>
+              <span class="text-lg font-black tabular-nums text-on-surface">
+                <span id="delay-display">45</span><span class="text-xs text-outline font-normal ml-1">sec</span>
+              </span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <button onclick="adjustDelay(5)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
+                <span class="material-symbols-outlined">expand_less</span>
+              </button>
+              <button onclick="adjustDelay(-5)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
+                <span class="material-symbols-outlined">expand_more</span>
+              </button>
+            </div>
           </div>
-          <div class="flex flex-col gap-1">
-            <button onclick="adjustDelay(10)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
-              <span class="material-symbols-outlined">expand_less</span>
-            </button>
-            <button onclick="adjustDelay(-10)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
-              <span class="material-symbols-outlined">expand_more</span>
-            </button>
+
+          <!-- Profit Target — market sell threshold -->
+          <div class="flex items-center gap-4">
+            <div class="flex-1 bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 flex items-center justify-between">
+              <div>
+                <span class="text-sm text-outline">Market Sell if ≥</span>
+                <span class="text-[10px] text-outline/60 ml-1">(from entry)</span>
+              </div>
+              <span class="text-lg font-black tabular-nums text-secondary">
+                +<span id="profit-display">0.50</span><span class="text-xs text-outline font-normal ml-0.5">%</span>
+              </span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <button onclick="adjustProfit(0.1)" class="p-1 bg-surface-container-highest rounded hover:text-secondary transition-colors">
+                <span class="material-symbols-outlined">expand_less</span>
+              </button>
+              <button onclick="adjustProfit(-0.1)" class="p-1 bg-surface-container-highest rounded hover:text-secondary transition-colors">
+                <span class="material-symbols-outlined">expand_more</span>
+              </button>
+            </div>
           </div>
+
+          <!-- Limit Sell Offset -->
+          <div class="flex items-center gap-4">
+            <div class="flex-1 bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 flex items-center justify-between">
+              <div>
+                <span class="text-sm text-outline">Limit Sell at</span>
+                <span class="text-[10px] text-outline/60 ml-1">(from entry)</span>
+              </div>
+              <span class="text-lg font-black tabular-nums text-primary">
+                +<span id="limit-sell-display">0.10</span><span class="text-xs text-outline font-normal ml-0.5">%</span>
+              </span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <button onclick="adjustLimitSell(0.05)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
+                <span class="material-symbols-outlined">expand_less</span>
+              </button>
+              <button onclick="adjustLimitSell(-0.05)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
+                <span class="material-symbols-outlined">expand_more</span>
+              </button>
+            </div>
+          </div>
+
         </div>
-        <input type="hidden" id="delay-val" value="30"/>
+        <input type="hidden" id="delay-val" value="45"/>
+        <input type="hidden" id="profit-val" value="0.5"/>
+        <input type="hidden" id="limit-sell-val" value="0.1"/>
       </div>
 
       <!-- Allocation -->
@@ -325,7 +374,9 @@
   let mode = 'live';
   let amountType = 'fixed';
   let selectedToken = 'BTC/USDT';
-  let delayVal = 30;
+  let delayVal = 45;
+  let profitTarget = 0.50;
+  let limitSellOffset = 0.10;
   let tradeCount = 0;
 
   // ── Mode ─────────────────────────────────────────────────────────────────
@@ -361,6 +412,20 @@
     delayVal = Math.max(1, delayVal + delta);
     document.getElementById('delay-display').textContent = delayVal;
     document.getElementById('delay-val').value = delayVal;
+  }
+
+  // ── Profit Target ─────────────────────────────────────────────────────────
+  function adjustProfit(delta) {
+    profitTarget = Math.max(0.1, Math.round((profitTarget + delta) * 100) / 100);
+    document.getElementById('profit-display').textContent = profitTarget.toFixed(2);
+    document.getElementById('profit-val').value = profitTarget;
+  }
+
+  // ── Limit Sell Offset ─────────────────────────────────────────────────────
+  function adjustLimitSell(delta) {
+    limitSellOffset = Math.max(0.01, Math.round((limitSellOffset + delta) * 100) / 100);
+    document.getElementById('limit-sell-display').textContent = limitSellOffset.toFixed(2);
+    document.getElementById('limit-sell-val').value = limitSellOffset;
   }
 
   // ── Amount Type ───────────────────────────────────────────────────────────
@@ -402,12 +467,14 @@
   async function startBot() {
     const payload = {
       mode,
-      api_key:      document.getElementById('api-key').value.trim(),
-      api_secret:   document.getElementById('api-secret').value.trim(),
-      token:        selectedToken,
-      delay:        delayVal,
-      amount_type:  amountType,
-      amount_value: parseFloat(document.getElementById('amount-value').value) || 100,
+      api_key:           document.getElementById('api-key').value.trim(),
+      api_secret:        document.getElementById('api-secret').value.trim(),
+      token:             selectedToken,
+      delay:             delayVal,
+      profit_target:     profitTarget,
+      limit_sell_offset: limitSellOffset,
+      amount_type:       amountType,
+      amount_value:      parseFloat(document.getElementById('amount-value').value) || 100,
     };
     if (mode === 'live' && (!payload.api_key || !payload.api_secret)) {
       showToast('API key and secret are required for live mode.');
