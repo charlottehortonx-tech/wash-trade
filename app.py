@@ -100,6 +100,7 @@ def start():
     amount_type = data.get("amount_type", "fixed")   # fixed | percent
     amount_value = float(data.get("amount_value", 100))
     min_balance = float(data.get("min_balance", 50))
+    min_liquidity = float(data.get("min_liquidity", 1000))
     mode = data.get("mode", "live")
 
     if mode == "live" and (not api_key or not api_secret):
@@ -131,6 +132,7 @@ def start():
         cfg["_ui"]["percent"] = amount_value / 100.0
 
     cfg["risk"]["min_balance_usd"] = min_balance
+    cfg["risk"]["min_order_book_depth_usd"] = min_liquidity
     cfg["logging"]["level"] = "INFO"
 
     _stop_event.clear()
@@ -144,6 +146,7 @@ def start():
             "profit_target": profit_target,
             "limit_sell_offset": limit_sell_offset,
             "min_balance": min_balance,
+            "min_liquidity": min_liquidity,
             "amount_type": amount_type,
             "amount_value": amount_value,
             "mode": mode,
@@ -187,6 +190,8 @@ def update_config():
     limit_sell_offset = float(data.get("limit_sell_offset", 0.1))
     amount_type = data.get("amount_type", "fixed")
     amount_value = float(data.get("amount_value", 100))
+    min_balance = float(data.get("min_balance", 50))
+    min_liquidity = float(data.get("min_liquidity", 1000))
 
     if _strategy_ref is not None:
         _strategy_ref.update_settings(
@@ -195,6 +200,8 @@ def update_config():
             limit_sell_offset=limit_sell_offset,
             amount_type=amount_type,
             amount_value=amount_value,
+            min_balance=min_balance,
+            min_liquidity=min_liquidity,
         )
 
     _bot_status["config"].update({
@@ -203,6 +210,8 @@ def update_config():
         "limit_sell_offset": limit_sell_offset,
         "amount_type": amount_type,
         "amount_value": amount_value,
+        "min_balance": min_balance,
+        "min_liquidity": min_liquidity,
     })
 
     return jsonify({"ok": True})

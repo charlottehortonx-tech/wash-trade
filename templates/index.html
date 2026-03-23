@@ -270,14 +270,26 @@
         </div>
       </div>
 
-      <!-- Min Balance -->
+      <!-- Min Balance + Min Liquidity -->
       <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
-        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Min Balance</h3>
-        <div class="relative">
-          <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">$</span>
-          <input id="min-balance" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-4 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="50" min="0" step="0.01" placeholder="50"/>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">Min Balance</h3>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">$</span>
+              <input id="min-balance" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-4 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="50" min="0" step="0.01" placeholder="50"/>
+            </div>
+            <p class="mt-2 text-[10px] text-outline">Halt when balance below this.</p>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">Min Liquidity</h3>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">$</span>
+              <input id="min-liquidity" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-4 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="1000" min="0" step="1" placeholder="1000"/>
+            </div>
+            <p class="mt-2 text-[10px] text-outline">Min order book depth to trade.</p>
+          </div>
         </div>
-        <p class="mt-2 text-[10px] text-outline">Bot refuses to trade when balance drops below this amount.</p>
       </div>
 
       <!-- Allocation -->
@@ -473,6 +485,7 @@
       profit_target:     parseFloat(document.getElementById('profit-val').value) || 0.5,
       limit_sell_offset: parseFloat(document.getElementById('limit-sell-val').value) || 0.1,
       min_balance:       parseFloat(document.getElementById('min-balance').value) || 0,
+      min_liquidity:     parseFloat(document.getElementById('min-liquidity').value) || 1000,
       amount_type:       amountType,
       amount_value:      parseFloat(document.getElementById('amount-value').value) || 100,
     };
@@ -508,11 +521,13 @@
 
   async function saveSettings() {
     const payload = {
-      delay:             delayVal,
-      profit_target:     profitTarget,
-      limit_sell_offset: limitSellOffset,
+      delay:             parseInt(document.getElementById('delay-val').value) || 45,
+      profit_target:     parseFloat(document.getElementById('profit-val').value) || 0.5,
+      limit_sell_offset: parseFloat(document.getElementById('limit-sell-val').value) || 0.1,
       amount_type:       amountType,
       amount_value:      parseFloat(document.getElementById('amount-value').value) || 100,
+      min_balance:       parseFloat(document.getElementById('min-balance').value) || 0,
+      min_liquidity:     parseFloat(document.getElementById('min-liquidity').value) || 1000,
     };
     const btn = document.getElementById('save-btn');
     btn.classList.add('opacity-40', 'cursor-not-allowed');
