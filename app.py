@@ -10,7 +10,7 @@ import os
 import pathlib
 import threading
 import time
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, Response
 
 import yaml
 import logger
@@ -208,6 +208,96 @@ def update_config():
     return jsonify({"ok": True})
 
 
+
+@app.route("/export/csv")
+def export_csv():
+    """Download all events as a CSV file."""
+    import json as _json
+    import csv
+    import io
+
+    # Collect all known fields across event types for stable column order
+    FIELDS = [
+        "ts", "event", "symbol", "side", "order_id", "qty", "price",
+        "filled_qty", "avg_price", "fee", "buy_price", "sell_price",
+        "buy_fee", "sell_fee", "realized_pnl", "delay_seconds",
+        "reason", "msg", "exc",
+    ]
+
+    rows = []
+    try:
+        with open(EVENT_LOG) as fh:
+            for line in fh:
+                try:
+                    rows.append(_json.loads(line))
+                except Exception:
+                    pass
+    except FileNotFoundError:
+        pass
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=FIELDS, extrasaction="ignore")
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(row)
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=bot_events.csv"},
+    )
+
+
+@app.route("/export/errors")
+def export_errors():
+    """Download only error and risk_rejected events as CSV."""
+    import json as _json
+    import csv
+    import io
+
+    ERROR_EVENTS = {"error", "risk_rejected", "order_cancelled"}
+    FIELDS = ["ts", "event", "reason", "msg", "exc", "order_id"]
+
+    rows = []
+    try:
+        with open(EVENT_LOG) as fh:
+            for line in fh:
+                try:
+                    ev = _json.loads(line)
+                    if ev.get("event") in ERROR_EVENTS:
+                        rows.append(ev)
+                except Exception:
+                    pass
+    except FileNotFoundError:
+        pass
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=FIELDS, extrasaction="ignore")
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(row)
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=bot_errors.csv"},
+    )
+
+
+@app.route("/export/log")
+def export_log():
+    """Download the raw bot.log file."""
+    try:
+        with open(LOG_FILE) as fh:
+            content = fh.read()
+    except FileNotFoundError:
+        content = "(log file not found)"
+
+    return Response(
+        content,
+        mimetype="text/plain",
+        headers={"Content-Disposition": "attachment; filename=bot.log"},
+    )
 
 @app.route("/force_buy", methods=["POST"])
 def force_buy():

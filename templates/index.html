@@ -338,7 +338,34 @@
             <span class="w-2 h-2 rounded-full bg-outline" id="log-dot"></span>
             Live Event Log
           </h3>
-          <span class="text-[10px] text-outline" id="log-count"></span>
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] text-outline" id="log-count"></span>
+            <!-- Export dropdown -->
+            <div class="relative" id="export-menu-wrap">
+              <button onclick="toggleExportMenu()"
+                class="flex items-center gap-1 px-2 py-1 bg-surface-container-highest rounded border border-outline-variant/20 text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-sm">download</span>
+                EXPORT
+              </button>
+              <div id="export-menu" class="hidden absolute right-0 top-8 z-50 bg-surface-container-highest border border-outline-variant/20 rounded-lg shadow-xl w-44 py-1">
+                <a href="/export/csv" download
+                  class="flex items-center gap-2 px-4 py-2 text-xs text-on-surface hover:bg-surface-container transition-colors">
+                  <span class="material-symbols-outlined text-sm text-secondary">table_chart</span>
+                  All Events (CSV)
+                </a>
+                <a href="/export/errors" download
+                  class="flex items-center gap-2 px-4 py-2 text-xs text-on-surface hover:bg-surface-container transition-colors">
+                  <span class="material-symbols-outlined text-sm text-error">error</span>
+                  Errors Only (CSV)
+                </a>
+                <a href="/export/log" download
+                  class="flex items-center gap-2 px-4 py-2 text-xs text-on-surface hover:bg-surface-container transition-colors">
+                  <span class="material-symbols-outlined text-sm text-outline">text_snippet</span>
+                  Raw Log (.log)
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="flex-1 overflow-y-auto p-2 space-y-1 font-mono text-[11px]" id="event-log">
           <div class="flex items-center gap-4 px-4 py-4 text-outline/50 justify-center">
@@ -415,6 +442,16 @@
   }
 
   // ── Toast ─────────────────────────────────────────────────────────────────
+  function toggleExportMenu() {
+    const menu = document.getElementById('export-menu');
+    menu.classList.toggle('hidden');
+  }
+  document.addEventListener('click', e => {
+    if (!document.getElementById('export-menu-wrap').contains(e.target)) {
+      document.getElementById('export-menu').classList.add('hidden');
+    }
+  });
+
   function showToast(msg, type = 'error') {
     const t = document.getElementById('toast');
     t.textContent = msg;
