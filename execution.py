@@ -48,6 +48,7 @@ class ExecutionEngine:
         self._sell_retry_delay: float = float(ecfg.get("sell_retry_delay_seconds", 3))
         self._stale_timeout: float = float(ecfg.get("stale_order_timeout_seconds", 30))
         self._min_sell_notional: float = float(ecfg.get("min_sell_notional_usd", 1.5))
+        self._cut_loss_timeout: float = float(ecfg.get("cut_loss_timeout_seconds", 120))
         self._sell_delay: float = float(
             cfg.get("strategy", {}).get("sell_delay_seconds", 30)
         )
@@ -184,6 +185,43 @@ class ExecutionEngine:
         else:
             logger.info("[Exec] Sell delay already elapsed; proceeding immediately.")
 
+    def _force_market_sell(self, qty: float, reason: str) -> float:
+        """
+        Last-resort market sell. Tries up to sell_retry_attempts times.
+        Returns fee collected (0.0 if all attempts fail — position may remain open).
+        """
+        logger.warning(
+            f"[Exec] CUT-LOSS triggered ({reason}) — forcing market sell "
+            f"qty={qty:.8f}"
+        )
+        for attempt in range(1, self._sell_retries + 1):
+            try:
+                order = self._client.place_order(
+                    symbol=self._symbol,
+                    side="sell",
+                    order_type="market",
+                    quantity=qty,
+                    price=None,
+                )
+                logger.order_submitted(order.order_id, "sell", self._symbol, qty, None)
+                order = self._poll_until_filled(order, timeout=self._fill_timeout)
+                if order.filled_qty > 0:
+                    logger.order_filled(
+                        order.order_id, "sell", self._symbol,
+                        order.filled_qty, order.avg_fill_price, order.fee,
+                    )
+                    logger.info("[Exec] Cut-loss market sell filled — position closed.")
+                    return order.fee
+            except Exception as exc:
+                logger.error(f"[Exec] Cut-loss market sell failed (attempt {attempt})", exc)
+            if attempt < self._sell_retries:
+                time.sleep(self._sell_retry_delay)
+        logger.error(
+            "[Exec] Cut-loss market sell exhausted all attempts — "
+            "position may still be open. Resolve manually."
+        )
+        return 0.0
+
     def place_sell(
         self, position: Position, current_mid: float
     ) -> Optional[float]:
@@ -223,8 +261,16 @@ class ExecutionEngine:
 
         remaining_qty = position.filled_qty
         total_fee = 0.0
+        cut_loss_deadline = time.time() + self._cut_loss_timeout
 
         for attempt in range(1, self._sell_retries + 1):
+            # Cut-loss: if we've spent too long trying, force a market sell now
+            if time.time() >= cut_loss_deadline:
+                total_fee += self._force_market_sell(
+                    remaining_qty, f"timeout after {self._cut_loss_timeout:.0f}s"
+                )
+                return total_fee
+
             # Skip sell if remaining notional is below exchange minimum (dust)
             notional = remaining_qty * current_mid
             if notional < self._min_sell_notional:
@@ -251,7 +297,11 @@ class ExecutionEngine:
                     time.sleep(self._sell_retry_delay)
                 continue
 
-            order = self._poll_until_filled(order, timeout=self._fill_timeout)
+            # Respect the cut-loss deadline inside the fill poll too
+            remaining_timeout = max(1.0, cut_loss_deadline - time.time())
+            order = self._poll_until_filled(
+                order, timeout=min(self._fill_timeout, remaining_timeout)
+            )
 
             if order.filled_qty > 0:
                 total_fee += order.fee
@@ -272,8 +322,6 @@ class ExecutionEngine:
             if attempt < self._sell_retries:
                 time.sleep(self._sell_retry_delay)
 
-        logger.error(
-            f"[Exec] Could not fully close position after {self._sell_retries} attempts. "
-            f"Remaining qty: {remaining_qty:.8f}"
-        )
-        return None
+        # Retry loop exhausted — cut-loss market sell as last resort
+        total_fee += self._force_market_sell(remaining_qty, "retries exhausted")
+        return total_fee

@@ -32,6 +32,7 @@ execution:
   sell_retry_delay_seconds: 3
   stale_order_timeout_seconds: 30
   min_sell_notional_usd: 1.5   # treat remaining qty as dust if notional < this
+  cut_loss_timeout_seconds: 120  # force market sell if position not closed within this many seconds
 
 # ── Risk Management ───────────────────────────────────────────
 risk:
