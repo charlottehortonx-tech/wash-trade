@@ -15,7 +15,9 @@ mode: "live"               # paper | live
 
 # ── Strategy ─────────────────────────────────────────────────
 strategy:
-  sell_delay_seconds: 30          # seconds to wait after buy fill before selling
+  sell_delay_seconds: 45          # seconds to wait after buy fill before evaluating sell
+  profit_target_pct: 0.5          # if price is >= entry + 0.5%  →  market sell
+  limit_sell_offset_pct: 0.1      # otherwise                    →  limit sell at entry + 0.1%
   allow_overlapping_positions: false
   signal_poll_interval_seconds: 5 # how often to call get_buy_signal()
 

@@ -50,6 +50,9 @@ class ExecutionEngine:
         self._sell_delay: float = float(
             cfg.get("strategy", {}).get("sell_delay_seconds", 30)
         )
+        scfg = cfg.get("strategy", {})
+        self._profit_target: float = float(scfg.get("profit_target_pct", 0.5)) / 100.0
+        self._limit_sell_offset: float = float(scfg.get("limit_sell_offset_pct", 0.1)) / 100.0
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
@@ -151,29 +154,50 @@ class ExecutionEngine:
             logger.info("[Exec] Sell delay already elapsed; proceeding immediately.")
 
     def place_sell(
-        self, position: Position, mid_price: float
+        self, position: Position, current_mid: float
     ) -> Optional[float]:
         """
         Place a SELL order for the exact filled quantity with retry logic.
+
+        Sell type is chosen dynamically based on price vs entry:
+          - current_mid >= entry * (1 + profit_target_pct)  →  market sell
+          - otherwise                                        →  limit sell at entry * (1 + limit_sell_offset_pct)
+
         Handles partial fills by re-selling the remaining amount.
         Returns total sell fee on success, None on failure.
         """
+        entry = position.avg_buy_price
+        gain_pct = (current_mid / entry - 1) * 100 if entry > 0 else 0.0
+
+        if current_mid >= entry * (1 + self._profit_target):
+            sell_type = "market"
+            sell_price: Optional[float] = None
+            logger.info(
+                f"[Exec] Price {current_mid:.4f} (+{gain_pct:.2f}%) ≥ "
+                f"+{self._profit_target * 100:.2f}% target — market sell"
+            )
+        else:
+            sell_type = "limit"
+            sell_price = round(entry * (1 + self._limit_sell_offset), 8)
+            logger.info(
+                f"[Exec] Price {current_mid:.4f} (+{gain_pct:.2f}%) below target — "
+                f"limit sell at {sell_price:.4f} (+{self._limit_sell_offset * 100:.2f}%)"
+            )
+
         remaining_qty = position.filled_qty
         total_fee = 0.0
-        total_proceeds = 0.0
 
         for attempt in range(1, self._sell_retries + 1):
-            price = self._compute_buy_price(mid_price, "sell")
             try:
                 order = self._client.place_order(
                     symbol=self._symbol,
                     side="sell",
-                    order_type=self._order_type,
+                    order_type=sell_type,
                     quantity=remaining_qty,
-                    price=price,
+                    price=sell_price,
                 )
                 logger.order_submitted(
-                    order.order_id, "sell", self._symbol, remaining_qty, price
+                    order.order_id, "sell", self._symbol, remaining_qty, sell_price
                 )
             except Exception as exc:
                 logger.error(f"SELL placement failed (attempt {attempt})", exc)
@@ -185,7 +209,6 @@ class ExecutionEngine:
 
             if order.filled_qty > 0:
                 total_fee += order.fee
-                total_proceeds += order.filled_qty * order.avg_fill_price
                 remaining_qty = round(remaining_qty - order.filled_qty, 10)
                 logger.order_filled(
                     order.order_id, "sell", self._symbol,
