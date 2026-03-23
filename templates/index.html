@@ -1,408 +1,547 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trading Bot</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:       #0d0f14;
-      --surface:  #161a24;
-      --border:   #252b3b;
-      --accent:   #3b82f6;
-      --green:    #22c55e;
-      --red:      #ef4444;
-      --text:     #e2e8f0;
-      --muted:    #64748b;
-      --radius:   12px;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 36px 40px;
-      width: 100%;
-      max-width: 460px;
-    }
-
-    /* ── Header ── */
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 32px;
-    }
-    .logo {
-      width: 36px; height: 36px;
-      background: var(--accent);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-    }
-    h1 { font-size: 18px; font-weight: 600; }
-    .subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-    /* ── Status pill ── */
-    .status-pill {
-      margin-left: auto;
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 500;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-    .status-pill.running { border-color: var(--green); color: var(--green); }
-    .status-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--muted);
-    }
-    .status-pill.running .status-dot { background: var(--green); animation: pulse 1.4s infinite; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    /* ── Form ── */
-    .field { margin-bottom: 20px; }
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 8px;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      font-size: 11px;
-    }
-
-    input, select {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 14px;
-      padding: 10px 14px;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-    input:focus, select:focus { border-color: var(--accent); }
-    input::placeholder { color: var(--muted); }
-
-    /* ── API key row ── */
-    .input-row {
-      display: flex; gap: 8px;
-    }
-    .input-row input { flex: 1; }
-    .eye-btn {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--muted);
-      cursor: pointer;
-      padding: 0 12px;
-      font-size: 16px;
-      transition: color 0.15s;
-    }
-    .eye-btn:hover { color: var(--text); }
-
-    /* ── Mode toggle ── */
-    .mode-toggle {
-      display: flex;
-      gap: 0;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .mode-toggle button {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      padding: 9px;
-      transition: background 0.15s, color 0.15s;
-    }
-    .mode-toggle button.active {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    /* ── Amount row ── */
-    .amount-row {
-      display: flex; gap: 8px;
-    }
-    .amount-type {
-      display: flex;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .amount-type button {
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      padding: 0 14px;
-      transition: background 0.15s, color 0.15s;
-    }
-    .amount-type button.active {
-      background: var(--accent);
-      color: #fff;
-    }
-    .amount-row input { flex: 1; }
-
-    /* ── Divider ── */
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 24px 0;
-    }
-
-    /* ── Start / Stop button ── */
-    #toggle-btn {
-      width: 100%;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      padding: 14px;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    #toggle-btn:active { transform: scale(0.98); }
-    #toggle-btn.start { background: var(--green); color: #fff; }
-    #toggle-btn.stop  { background: var(--red);   color: #fff; }
-    #toggle-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* ── Error / info toast ── */
-    .toast {
-      margin-top: 14px;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      display: none;
-    }
-    .toast.error { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
-    .toast.info  { background: rgba(34,197,94,.12); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
-  </style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Obsidian Architect | Pilot-01 Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-tertiary-fixed-variant": "#930013",
+          "secondary-fixed": "#6ffbbe",
+          "on-surface": "#e5e2e1",
+          "surface-dim": "#131313",
+          "surface-bright": "#393939",
+          "error": "#ffb4ab",
+          "on-error-container": "#ffdad6",
+          "secondary": "#4edea3",
+          "secondary-fixed-dim": "#4edea3",
+          "on-error": "#690005",
+          "tertiary-fixed": "#ffdad7",
+          "tertiary-fixed-dim": "#ffb3ad",
+          "on-secondary-container": "#00311f",
+          "primary-fixed-dim": "#adc7ff",
+          "outline-variant": "#414754",
+          "surface-container-lowest": "#0e0e0e",
+          "surface-container": "#201f1f",
+          "on-surface-variant": "#c1c6d7",
+          "on-secondary": "#003824",
+          "on-tertiary-container": "#5c0008",
+          "secondary-container": "#00a572",
+          "on-background": "#e5e2e1",
+          "on-tertiary": "#68000a",
+          "inverse-surface": "#e5e2e1",
+          "surface": "#131313",
+          "on-tertiary-fixed": "#410004",
+          "tertiary-container": "#ff5451",
+          "on-primary-fixed-variant": "#004493",
+          "primary-container": "#4a8eff",
+          "inverse-primary": "#005bc0",
+          "error-container": "#93000a",
+          "on-secondary-fixed": "#002113",
+          "on-primary-container": "#00285b",
+          "primary-fixed": "#d8e2ff",
+          "on-secondary-fixed-variant": "#005236",
+          "surface-container-highest": "#353534",
+          "background": "#131313",
+          "surface-container-low": "#1c1b1b",
+          "primary": "#adc7ff",
+          "inverse-on-surface": "#313030",
+          "on-primary": "#002e68",
+          "on-primary-fixed": "#001a41",
+          "surface-variant": "#353534",
+          "surface-tint": "#adc7ff",
+          "outline": "#8b90a0",
+          "surface-container-high": "#2a2a2a",
+          "tertiary": "#ffb3ad"
+        },
+        fontFamily: {
+          "headline": ["Inter"],
+          "body": ["Inter"],
+          "label": ["Inter"]
+        },
+        borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+      },
+    },
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #131313; }
+  ::-webkit-scrollbar-thumb { background: #353534; border-radius: 2px; }
+</style>
 </head>
-<body>
-<div class="card">
+<body class="bg-surface text-on-surface overflow-hidden">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="logo">⚡</div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#131313] font-['Inter'] tabular-nums tracking-tight">
+  <div class="flex items-center gap-8">
+    <span class="text-xl font-black tracking-tighter text-slate-200 uppercase">Obsidian Architect</span>
+    <nav class="hidden md:flex gap-6 text-sm">
+      <span class="text-slate-500 px-2 py-1">Portfolio</span>
+      <span class="text-blue-400 font-bold">BTC/USDT</span>
+      <span class="text-slate-500 flex items-center gap-1" id="header-status">
+        <span class="w-1.5 h-1.5 rounded-full bg-outline" id="header-dot"></span>
+        <span id="header-status-text">Idle</span>
+      </span>
+    </nav>
+  </div>
+  <div class="flex items-center gap-4">
+    <button class="p-2 text-slate-400 hover:bg-[#201f1f] transition-colors rounded scale-95 active:scale-90">
+      <span class="material-symbols-outlined">account_balance_wallet</span>
+    </button>
+    <button class="p-2 text-slate-400 hover:bg-[#201f1f] transition-colors rounded scale-95 active:scale-90 relative">
+      <span class="material-symbols-outlined">notifications</span>
+      <span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" id="notif-dot" style="display:none"></span>
+    </button>
+  </div>
+</header>
+
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 flex flex-col py-8 bg-[#1c1b1b] font-['Inter'] text-sm font-medium border-r-0">
+  <div class="px-6 mb-10 flex items-center gap-3">
+    <div class="w-10 h-10 bg-surface-container-highest rounded-lg flex items-center justify-center border border-outline-variant/20">
+      <span class="material-symbols-outlined text-primary">rocket_launch</span>
+    </div>
     <div>
-      <h1>Trading Bot</h1>
-      <div class="subtitle">Signal → Buy → Wait → Sell</div>
-    </div>
-    <div class="status-pill" id="status-pill">
-      <div class="status-dot"></div>
-      <span id="status-label">Idle</span>
+      <div class="text-lg font-bold text-slate-200">Pilot-01</div>
+      <div class="text-[10px] uppercase tracking-widest text-primary font-black">Pro Tier</div>
     </div>
   </div>
-
-  <!-- Mode -->
-  <div class="field">
-    <label>Mode</label>
-    <div class="mode-toggle">
-      <button class="active" data-mode="paper" onclick="setMode('paper')">Paper</button>
-      <button data-mode="live" onclick="setMode('live')">Live</button>
+  <nav class="flex-1 space-y-1 px-4">
+    <a class="flex items-center gap-3 px-4 py-3 rounded text-blue-400 bg-[#201f1f] border-r-2 border-blue-500 transition-all" href="#">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span>Dashboard</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 rounded text-slate-500 hover:text-slate-200 hover:bg-[#201f1f] transition-all" href="#">
+      <span class="material-symbols-outlined">terminal</span>
+      <span>Logs</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 rounded text-slate-500 hover:text-slate-200 hover:bg-[#201f1f] transition-all" href="#">
+      <span class="material-symbols-outlined">settings</span>
+      <span>Settings</span>
+    </a>
+  </nav>
+  <!-- Live mode indicator -->
+  <div class="px-6 mb-4">
+    <p class="text-[10px] font-bold text-outline uppercase tracking-widest mb-2">Trading Mode</p>
+    <div class="flex items-center gap-2 px-3 py-2 bg-secondary-container/20 rounded-lg border border-secondary/30">
+      <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+      <span class="text-[11px] font-bold text-secondary tracking-widest">LIVE TRADING</span>
     </div>
   </div>
+  <div class="px-6">
+    <button class="w-full py-3 bg-primary text-on-primary rounded font-bold hover:bg-primary-container transition-colors shadow-lg shadow-primary/10">
+      Upgrade Plan
+    </button>
+  </div>
+</aside>
 
-  <!-- API Key (shown only in live mode) -->
-  <div class="field" id="api-section" style="display:none">
-    <label>API Key</label>
-    <div class="input-row">
-      <input type="password" id="api-key" placeholder="Paste your exchange API key" />
-      <button class="eye-btn" onclick="toggleEye('api-key', this)">👁</button>
-    </div>
-    <div style="margin-top:10px">
-      <label>API Secret</label>
-      <div class="input-row">
-        <input type="password" id="api-secret" placeholder="Paste your API secret" />
-        <button class="eye-btn" onclick="toggleEye('api-secret', this)">👁</button>
+<!-- Main Content Area -->
+<main class="ml-64 mt-16 p-8 h-[calc(100vh-64px)] overflow-y-auto bg-surface-dim">
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed top-20 right-6 z-50 px-4 py-3 rounded-xl text-sm font-medium border shadow-lg transition-all"></div>
+
+  <!-- Header Actions -->
+  <section class="mb-8 flex gap-4">
+    <button id="start-btn" onclick="startBot()"
+      class="flex-1 h-16 bg-secondary-container text-on-secondary-container rounded-lg font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all border border-secondary/20 group">
+      <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">play_arrow</span>
+      START BOT
+    </button>
+    <button id="stop-btn" onclick="stopBot()"
+      class="flex-1 h-16 bg-tertiary-container text-on-tertiary-container rounded-lg font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all border border-tertiary/20 group opacity-40 cursor-not-allowed">
+      <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">stop</span>
+      STOP BOT
+    </button>
+  </section>
+
+  <div class="grid grid-cols-12 gap-6">
+
+    <!-- Left Column: Controls -->
+    <div class="col-span-12 lg:col-span-5 space-y-6">
+
+      <!-- API & Connection -->
+      <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4 flex items-center justify-between">
+          API &amp; Connection
+          <span id="conn-badge" class="text-[10px] bg-outline/10 text-outline px-2 py-0.5 rounded-full border border-outline/20">IDLE</span>
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-[10px] text-outline mb-1 uppercase font-bold">API Key</label>
+            <div class="relative">
+              <input id="api-key" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="password" placeholder="Paste your exchange API key"/>
+              <span class="material-symbols-outlined absolute right-3 top-2.5 text-outline text-lg cursor-pointer hover:text-on-surface select-none" onclick="toggleEye('api-key',this)">visibility</span>
+            </div>
+          </div>
+          <!-- API Secret -->
+          <div id="api-secret-section">
+            <label class="block text-[10px] text-outline mb-1 uppercase font-bold">API Secret</label>
+            <div class="relative">
+              <input id="api-secret" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="password" placeholder="Paste your API secret"/>
+              <span class="material-symbols-outlined absolute right-3 top-2.5 text-outline text-lg cursor-pointer hover:text-on-surface select-none" onclick="toggleEye('api-secret',this)">visibility</span>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Token -->
-  <div class="field">
-    <label>Token Focus</label>
-    <select id="token">
-      <option value="BTC/USDT">BTC / USDT</option>
-      <option value="ETH/USDT">ETH / USDT</option>
-      <option value="SOL/USDT">SOL / USDT</option>
-      <option value="BNB/USDT">BNB / USDT</option>
-      <option value="XRP/USDT">XRP / USDT</option>
-      <option value="DOGE/USDT">DOGE / USDT</option>
-    </select>
-  </div>
-
-  <!-- Delay -->
-  <div class="field">
-    <label>Delay between Buy → Sell</label>
-    <input type="number" id="delay" value="30" min="1" max="3600"
-           placeholder="Seconds" />
-  </div>
-
-  <!-- Amount -->
-  <div class="field">
-    <label>Trade Amount</label>
-    <div class="amount-row">
-      <div class="amount-type">
-        <button class="active" id="btn-fixed" onclick="setAmountType('fixed')">$</button>
-        <button id="btn-pct" onclick="setAmountType('percent')">%</button>
+      <!-- Trading Focus -->
+      <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Trading Focus</h3>
+        <div class="grid grid-cols-2 gap-3" id="token-grid">
+          <button onclick="selectToken(this,'BTC/USDT')" data-token="BTC/USDT"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary">
+            <span class="font-bold tabular-nums">BTC/USDT</span>
+            <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">check_circle</span>
+          </button>
+          <button onclick="selectToken(this,'ETH/USDT')" data-token="ETH/USDT"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">ETH/USDT</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+          <button onclick="selectToken(this,'SOL/USDT')" data-token="SOL/USDT"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">SOL/USDT</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+          <button onclick="selectToken(this,'BNB/USDT')" data-token="BNB/USDT"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">BNB/USDT</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+        </div>
       </div>
-      <input type="number" id="amount-value" value="100" min="1"
-             placeholder="Amount" />
+
+      <!-- Execution Timer -->
+      <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Execution Timer</h3>
+        <div class="flex items-center gap-4">
+          <div class="flex-1 bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 flex items-center justify-between">
+            <span class="text-sm text-outline">Delay Time</span>
+            <span class="text-lg font-black tabular-nums text-on-surface">
+              <span id="delay-display">30</span><span class="text-xs text-outline font-normal ml-1">sec</span>
+            </span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <button onclick="adjustDelay(10)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
+              <span class="material-symbols-outlined">expand_less</span>
+            </button>
+            <button onclick="adjustDelay(-10)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
+              <span class="material-symbols-outlined">expand_more</span>
+            </button>
+          </div>
+        </div>
+        <input type="hidden" id="delay-val" value="30"/>
+      </div>
+
+      <!-- Allocation -->
+      <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Allocation</h3>
+          <div class="flex p-1 bg-surface-container-lowest rounded-lg border border-outline-variant/10">
+            <button id="btn-fixed" onclick="setAmountType('fixed')"
+              class="px-3 py-1 text-[10px] font-bold rounded bg-primary text-on-primary">FIXED $</button>
+            <button id="btn-pct" onclick="setAmountType('percent')"
+              class="px-3 py-1 text-[10px] font-bold text-outline">PERCENTAGE %</button>
+          </div>
+        </div>
+        <div class="relative">
+          <span id="amount-prefix" class="absolute left-4 top-3 text-outline text-sm">$</span>
+          <input id="amount-value" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-4 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="5000" min="1"/>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Performance & Status -->
+    <div class="col-span-12 lg:col-span-7 space-y-6">
+
+      <!-- Real-time Stats -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8"></div>
+          <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Open Position</p>
+          <p class="text-xl font-black tabular-nums text-primary" id="stat-position">—</p>
+          <div class="mt-2 text-[10px] text-secondary flex items-center gap-1" id="stat-position-sub">
+            <span class="material-symbols-outlined text-xs">trending_flat</span>
+            No position
+          </div>
+        </div>
+        <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10">
+          <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Total Trades</p>
+          <p class="text-xl font-black tabular-nums text-secondary" id="stat-trades">0</p>
+          <div class="mt-2 flex gap-1 items-end h-4" id="stat-bars">
+            <div class="w-1 bg-surface-container-highest rounded-full h-2"></div>
+            <div class="w-1 bg-surface-container-highest rounded-full h-4"></div>
+            <div class="w-1 bg-surface-container-highest rounded-full h-3"></div>
+            <div class="w-1 bg-surface-container-highest rounded-full h-2"></div>
+            <div class="w-1 bg-surface-container-highest rounded-full h-4"></div>
+          </div>
+        </div>
+        <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10">
+          <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Mode</p>
+          <p class="text-xl font-black tabular-nums text-secondary" id="stat-mode">LIVE</p>
+          <div class="mt-2 text-[10px] text-outline" id="stat-started">Not started</div>
+        </div>
+      </div>
+
+      <!-- Live Event Log -->
+      <div class="bg-surface-container-low rounded-xl border border-outline-variant/10 flex flex-col" style="height:516px">
+        <div class="p-6 border-b border-outline-variant/10 flex justify-between items-center">
+          <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-outline" id="log-dot"></span>
+            Live Event Log
+          </h3>
+          <span class="text-[10px] text-outline" id="log-count"></span>
+        </div>
+        <div class="flex-1 overflow-y-auto p-2 space-y-1 font-mono text-[11px]" id="event-log">
+          <div class="flex items-center gap-4 px-4 py-4 text-outline/50 justify-center">
+            Waiting for events...
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
+</main>
 
-  <hr class="divider" />
-
-  <!-- Start / Stop -->
-  <button id="toggle-btn" class="start" onclick="toggleBot()">▶ Start Bot</button>
-
-  <div class="toast" id="toast"></div>
-
-</div>
+<!-- Ambient overlay -->
+<div class="fixed inset-0 pointer-events-none border-[12px] border-surface z-40 opacity-50"></div>
+<div class="fixed bottom-0 left-64 right-0 h-32 bg-gradient-to-t from-surface to-transparent pointer-events-none z-10"></div>
 
 <script>
-  let mode = 'paper';
+  // ── State ────────────────────────────────────────────────────────────────
+  let mode = 'live';
   let amountType = 'fixed';
-  let polling;
+  let selectedToken = 'BTC/USDT';
+  let delayVal = 30;
+  let tradeCount = 0;
 
-  /* ── Mode toggle ─────────────────────────────────────────────────── */
+  // ── Mode ─────────────────────────────────────────────────────────────────
   function setMode(m) {
     mode = m;
-    document.querySelectorAll('.mode-toggle button').forEach(b =>
-      b.classList.toggle('active', b.dataset.mode === m)
-    );
-    document.getElementById('api-section').style.display = m === 'live' ? 'block' : 'none';
+    document.getElementById('btn-paper').className =
+      m === 'paper'
+        ? 'flex-1 py-2 text-[11px] font-bold rounded bg-primary text-on-primary transition-colors'
+        : 'flex-1 py-2 text-[11px] font-bold text-outline transition-colors';
+    document.getElementById('btn-live').className =
+      m === 'live'
+        ? 'flex-1 py-2 text-[11px] font-bold rounded bg-primary text-on-primary transition-colors'
+        : 'flex-1 py-2 text-[11px] font-bold text-outline transition-colors';
+    document.getElementById('api-secret-section').style.display = m === 'live' ? 'block' : 'none';
+    document.getElementById('stat-mode').textContent = m.toUpperCase();
   }
 
-  /* ── Amount type ─────────────────────────────────────────────────── */
+  // ── Token ─────────────────────────────────────────────────────────────────
+  function selectToken(el, tok) {
+    selectedToken = tok;
+    document.querySelectorAll('.token-btn').forEach(b => {
+      const active = b.dataset.token === tok;
+      b.className = active
+        ? 'token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary'
+        : 'token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors';
+      b.querySelector('.material-symbols-outlined').textContent = active ? 'check_circle' : 'radio_button_unchecked';
+      b.querySelector('.material-symbols-outlined').style.fontVariationSettings = active ? "'FILL' 1" : "'FILL' 0";
+    });
+  }
+
+  // ── Delay ─────────────────────────────────────────────────────────────────
+  function adjustDelay(delta) {
+    delayVal = Math.max(1, delayVal + delta);
+    document.getElementById('delay-display').textContent = delayVal;
+    document.getElementById('delay-val').value = delayVal;
+  }
+
+  // ── Amount Type ───────────────────────────────────────────────────────────
   function setAmountType(t) {
     amountType = t;
-    document.getElementById('btn-fixed').classList.toggle('active', t === 'fixed');
-    document.getElementById('btn-pct').classList.toggle('active', t === 'percent');
-    const input = document.getElementById('amount-value');
-    if (t === 'percent') {
-      input.max = 100;
-      if (parseFloat(input.value) > 100) input.value = 10;
-    } else {
-      input.max = 999999;
-    }
+    const isFixed = t === 'fixed';
+    document.getElementById('btn-fixed').className = isFixed
+      ? 'px-3 py-1 text-[10px] font-bold rounded bg-primary text-on-primary'
+      : 'px-3 py-1 text-[10px] font-bold text-outline';
+    document.getElementById('btn-pct').className = !isFixed
+      ? 'px-3 py-1 text-[10px] font-bold rounded bg-primary text-on-primary'
+      : 'px-3 py-1 text-[10px] font-bold text-outline';
+    document.getElementById('amount-prefix').textContent = isFixed ? '$' : '%';
+    const inp = document.getElementById('amount-value');
+    if (!isFixed) { inp.max = 100; if (parseFloat(inp.value) > 100) inp.value = 10; }
+    else inp.max = 9999999;
   }
 
-  /* ── Eye toggle ──────────────────────────────────────────────────── */
-  function toggleEye(id, btn) {
+  // ── Eye Toggle ────────────────────────────────────────────────────────────
+  function toggleEye(id, icon) {
     const el = document.getElementById(id);
-    el.type = el.type === 'password' ? 'text' : 'password';
+    const show = el.type === 'password';
+    el.type = show ? 'text' : 'password';
+    icon.textContent = show ? 'visibility_off' : 'visibility';
   }
 
-  /* ── Toast ───────────────────────────────────────────────────────── */
+  // ── Toast ─────────────────────────────────────────────────────────────────
   function showToast(msg, type = 'error') {
     const t = document.getElementById('toast');
     t.textContent = msg;
-    t.className = `toast ${type}`;
+    t.className = type === 'error'
+      ? 'fixed top-20 right-6 z-50 px-4 py-3 rounded-xl text-sm font-medium border shadow-lg bg-error-container text-error border-error/30'
+      : 'fixed top-20 right-6 z-50 px-4 py-3 rounded-xl text-sm font-medium border shadow-lg bg-secondary/10 text-secondary border-secondary/30';
     t.style.display = 'block';
     setTimeout(() => { t.style.display = 'none'; }, 4000);
   }
 
-  /* ── Status polling ──────────────────────────────────────────────── */
-  function updateStatus(data) {
-    const pill = document.getElementById('status-pill');
-    const label = document.getElementById('status-label');
-    const btn = document.getElementById('toggle-btn');
-
-    if (data.running) {
-      pill.className = 'status-pill running';
-      label.textContent = 'Running';
-      btn.className = 'stop';
-      btn.textContent = '■ Stop Bot';
-    } else {
-      pill.className = 'status-pill';
-      label.textContent = data.error ? 'Error' : 'Idle';
-      btn.className = 'start';
-      btn.textContent = '▶ Start Bot';
-      if (data.error) showToast(data.error);
+  // ── Start / Stop ──────────────────────────────────────────────────────────
+  async function startBot() {
+    const payload = {
+      mode,
+      api_key:      document.getElementById('api-key').value.trim(),
+      api_secret:   document.getElementById('api-secret').value.trim(),
+      token:        selectedToken,
+      delay:        delayVal,
+      amount_type:  amountType,
+      amount_value: parseFloat(document.getElementById('amount-value').value) || 100,
+    };
+    if (mode === 'live' && (!payload.api_key || !payload.api_secret)) {
+      showToast('API key and secret are required for live mode.');
+      return;
     }
+    const r = await fetch('/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const d = await r.json();
+    if (!d.ok) { showToast(d.error || 'Could not start bot.'); }
+    else { showToast('Bot started in ' + mode + ' mode.', 'info'); }
+    pollStatus();
+  }
+
+  async function stopBot() {
+    const r = await fetch('/stop', { method:'POST' });
+    const d = await r.json();
+    if (!d.ok) showToast(d.error || 'Could not stop bot.');
+    else showToast('Bot stopped.', 'info');
+    pollStatus();
+  }
+
+  // ── Status Polling ────────────────────────────────────────────────────────
+  function applyStatus(data) {
+    const running = data.running;
+
+    // Header dot
+    const dot = document.getElementById('header-dot');
+    const txt = document.getElementById('header-status-text');
+    dot.className = running
+      ? 'w-1.5 h-1.5 rounded-full bg-secondary animate-pulse'
+      : 'w-1.5 h-1.5 rounded-full bg-outline';
+    txt.textContent = running ? 'Active' : (data.error ? 'Error' : 'Idle');
+
+    // Connection badge
+    const badge = document.getElementById('conn-badge');
+    badge.textContent = running ? 'CONNECTED' : 'IDLE';
+    badge.className = running
+      ? 'text-[10px] bg-secondary/10 text-secondary px-2 py-0.5 rounded-full border border-secondary/20'
+      : 'text-[10px] bg-outline/10 text-outline px-2 py-0.5 rounded-full border border-outline/20';
+
+    // Log pulse dot
+    document.getElementById('log-dot').className = running
+      ? 'w-2 h-2 rounded-full bg-secondary animate-pulse'
+      : 'w-2 h-2 rounded-full bg-outline';
+
+    // Start/Stop buttons
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn  = document.getElementById('stop-btn');
+    if (running) {
+      startBtn.classList.add('opacity-40','cursor-not-allowed');
+      stopBtn.classList.remove('opacity-40','cursor-not-allowed');
+    } else {
+      startBtn.classList.remove('opacity-40','cursor-not-allowed');
+      stopBtn.classList.add('opacity-40','cursor-not-allowed');
+    }
+
+    // Stats
+    if (data.config && data.config.mode) {
+      document.getElementById('stat-mode').textContent = data.config.mode.toUpperCase();
+    }
+    if (data.started_at) {
+      const d = new Date(data.started_at);
+      document.getElementById('stat-started').textContent = 'Since ' + d.toLocaleTimeString();
+    } else {
+      document.getElementById('stat-started').textContent = running ? 'Running' : 'Not started';
+    }
+
+    if (data.error) { showToast(data.error); document.getElementById('notif-dot').style.display = 'block'; }
   }
 
   async function pollStatus() {
     try {
       const r = await fetch('/status');
-      updateStatus(await r.json());
-    } catch (_) {}
+      applyStatus(await r.json());
+    } catch(_) {}
   }
 
-  /* ── Start / Stop ────────────────────────────────────────────────── */
-  async function toggleBot() {
-    const btn = document.getElementById('toggle-btn');
-    const isRunning = btn.classList.contains('stop');
+  // ── Event Log Polling ─────────────────────────────────────────────────────
+  const EVENT_COLORS = {
+    order_submitted: { label:'SUBMIT', cls:'text-primary font-bold px-1.5 py-0.5 bg-primary/10 rounded' },
+    order_filled:    { label:'FILL',   cls:'text-secondary font-bold px-1.5 py-0.5 bg-secondary/10 rounded' },
+    order_cancelled: { label:'CANCEL', cls:'text-tertiary font-bold px-1.5 py-0.5 bg-tertiary/10 rounded' },
+    error:           { label:'ERROR',  cls:'text-error font-bold px-1.5 py-0.5 bg-error/10 rounded' },
+  };
 
-    btn.disabled = true;
+  function formatEvent(ev) {
+    const cfg = EVENT_COLORS[ev.event] || { label: ev.event.toUpperCase().slice(0,6), cls:'text-outline font-bold px-1.5 py-0.5 bg-surface-container-highest rounded' };
+    const ts = new Date(ev.ts).toLocaleTimeString('en-GB', { hour12:false });
 
-    if (isRunning) {
-      const r = await fetch('/stop', { method: 'POST' });
-      const d = await r.json();
-      if (!d.ok) showToast(d.error || 'Could not stop bot.');
-    } else {
-      const payload = {
-        mode,
-        api_key:      document.getElementById('api-key').value.trim(),
-        api_secret:   document.getElementById('api-secret').value.trim(),
-        token:        document.getElementById('token').value,
-        delay:        parseInt(document.getElementById('delay').value) || 30,
-        amount_type:  amountType,
-        amount_value: parseFloat(document.getElementById('amount-value').value) || 100,
-      };
-      const r = await fetch('/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const d = await r.json();
-      if (!d.ok) {
-        showToast(d.error || 'Could not start bot.');
-      } else {
-        showToast('Bot started in ' + mode + ' mode.', 'info');
+    let detail = '';
+    if (ev.side && ev.symbol)       detail = `${ev.side.toUpperCase()} ${ev.symbol}`;
+    if (ev.filled_qty !== undefined) detail += ` — ${ev.filled_qty} @ $${ev.avg_price?.toLocaleString() ?? '—'}`;
+    if (ev.qty !== undefined && ev.filled_qty === undefined) detail += ` qty ${ev.qty}`;
+    if (ev.msg)                      detail = ev.msg;
+    if (ev.reason)                   detail += ` (${ev.reason})`;
+
+    return `<div class="flex items-center gap-4 px-4 py-3 hover:bg-surface-bright/20 rounded transition-colors group">
+      <span class="text-outline/50 tabular-nums shrink-0">${ts}</span>
+      <span class="${cfg.cls}">${cfg.label}</span>
+      <span class="text-on-surface-variant truncate">${detail}</span>
+    </div>`;
+  }
+
+  let lastEventCount = 0;
+
+  async function pollEvents() {
+    try {
+      const r = await fetch('/events?n=50');
+      const evs = await r.json();
+      if (evs.length !== lastEventCount) {
+        lastEventCount = evs.length;
+        tradeCount = evs.filter(e => e.event === 'order_filled').length;
+        document.getElementById('stat-trades').textContent = tradeCount;
+        document.getElementById('log-count').textContent = evs.length + ' events';
+
+        // Bars animation based on trade count
+        if (tradeCount > 0) {
+          document.getElementById('stat-bars').querySelectorAll('div').forEach(b => b.className = 'w-1 bg-secondary rounded-full h-' + ([2,4,3,2,4][Math.floor(Math.random()*5)]));
+        }
+
+        const log = document.getElementById('event-log');
+        if (evs.length === 0) {
+          log.innerHTML = '<div class="flex items-center gap-4 px-4 py-4 text-outline/50 justify-center">Waiting for events...</div>';
+        } else {
+          log.innerHTML = evs.map(formatEvent).join('');
+        }
       }
-    }
-
-    btn.disabled = false;
-    pollStatus();
+    } catch(_) {}
   }
 
-  /* ── Init ────────────────────────────────────────────────────────── */
+  // ── Init ──────────────────────────────────────────────────────────────────
   pollStatus();
+  pollEvents();
   setInterval(pollStatus, 3000);
+  setInterval(pollEvents, 3000);
 </script>
 </body>
 </html>
