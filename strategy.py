@@ -164,12 +164,13 @@ class Strategy:
         # ── 6. Place SELL ─────────────────────────────────────────────────────
         sell_fee = self._engine.place_sell(position, sell_mid)
         if sell_fee is None:
+            # Sell completely failed (should not happen after cut-loss was added,
+            # but guard just in case). Always unblock so the bot can continue.
             logger.error(
-                "[Strategy] Failed to close position — bot halted. "
-                "Resolve the open position manually and restart."
+                "[Strategy] place_sell returned None — marking position closed "
+                "so the bot can resume. Check exchange for any open position."
             )
-            # Do NOT clear the open-position flag. This keeps _has_open_position=True
-            # so check_all() will reject every future signal until the bot is restarted.
+            self._risk.set_position_closed(realized_pnl=0.0)
             return False
 
         # ── 7. PnL accounting ─────────────────────────────────────────────────
