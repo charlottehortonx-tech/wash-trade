@@ -47,6 +47,7 @@ class ExecutionEngine:
         self._sell_retries: int = int(ecfg.get("sell_retry_attempts", 5))
         self._sell_retry_delay: float = float(ecfg.get("sell_retry_delay_seconds", 3))
         self._stale_timeout: float = float(ecfg.get("stale_order_timeout_seconds", 30))
+        self._min_sell_notional: float = float(ecfg.get("min_sell_notional_usd", 1.5))
         self._sell_delay: float = float(
             cfg.get("strategy", {}).get("sell_delay_seconds", 30)
         )
@@ -202,6 +203,15 @@ class ExecutionEngine:
         total_fee = 0.0
 
         for attempt in range(1, self._sell_retries + 1):
+            # Skip sell if remaining notional is below exchange minimum (dust)
+            notional = remaining_qty * current_mid
+            if notional < self._min_sell_notional:
+                logger.warning(
+                    f"[Exec] Remaining qty {remaining_qty:.8f} notional ~${notional:.4f} "
+                    f"< min ${self._min_sell_notional} — treating as dust, position closed."
+                )
+                return total_fee
+
             try:
                 order = self._client.place_order(
                     symbol=self._symbol,
