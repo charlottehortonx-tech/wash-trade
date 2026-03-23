@@ -73,19 +73,40 @@ class Strategy:
         self._amount_value: float = float(ui_cfg.get("amount_value", 100.0))
         self._amount_pct: float = float(ui_cfg.get("percent", 0.01))
 
+    def update_settings(
+        self,
+        delay: float,
+        profit_target: float,
+        limit_sell_offset: float,
+        amount_type: str,
+        amount_value: float,
+    ) -> None:
+        self._amount_type = amount_type
+        self._amount_value = amount_value
+        self._amount_pct = amount_value / 100.0
+        self._engine.update_settings(delay, profit_target, limit_sell_offset)
+        logger.info(
+            f"[Strategy] Settings updated  amount_type={amount_type}  "
+            f"amount_value={amount_value}"
+        )
+
     # ── Quantity calculation ──────────────────────────────────────────────────
 
     def _calc_qty(self, mid_price: float) -> float:
         """Compute order quantity from configured amount type and value."""
+        import math
         if mid_price <= 0:
             return 0.0
         if self._amount_type == "percent":
             try:
                 balance = self._client.get_balance()
-                return round(balance.quote * self._amount_pct / mid_price, 8)
+                raw = balance.quote * self._amount_pct / mid_price
             except Exception:
                 return 0.0
-        return round(self._amount_value / mid_price, 8)
+        else:
+            raw = self._amount_value / mid_price
+        # Floor to 8 decimal places so qty * price never exceeds the budget
+        return math.floor(raw * 1e8) / 1e8
 
     # ── Single trade cycle ────────────────────────────────────────────────────
 
