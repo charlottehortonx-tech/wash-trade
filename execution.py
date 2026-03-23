@@ -144,8 +144,11 @@ class ExecutionEngine:
             return None
 
         # BinanceTH sometimes returns cummulativeQuoteQty=0 even on a filled poll.
-        # Re-fetch once more to get the real avg fill price.
-        if order.avg_fill_price == 0.0 and order.filled_qty > 0:
+        # Retry up to 5 times with short delays to get the real avg fill price.
+        for _attempt in range(5):
+            if order.avg_fill_price != 0.0 or order.filled_qty == 0:
+                break
+            time.sleep(1)
             try:
                 order = self._client.get_order(order.order_id, order.symbol)
                 logger.info(
@@ -154,6 +157,7 @@ class ExecutionEngine:
                 )
             except Exception as exc:
                 logger.error("Failed to re-fetch buy order fill price", exc)
+                break
 
         # Partial fill: treat filled portion as the position
         pos = Position(

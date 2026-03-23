@@ -10,6 +10,7 @@ exchange:
   symbol: "BTC/USDT"
   market_type: "spot"      # spot | futures
   qty_step: 0.00001        # LOT_SIZE step for quantity rounding (BTC = 0.00001)
+  price_step: 0.01         # PRICE_FILTER tick size (BTC/USDT on BinanceTH = 0.01)
 
 # ── Mode ─────────────────────────────────────────────────────
 mode: "live"               # paper | live
