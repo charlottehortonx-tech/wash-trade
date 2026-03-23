@@ -1,13 +1,13 @@
 """
-app.py — Minimal Flask UI for the trading bot.
+app.py — Production Flask UI for the trading bot.
 
 Run:
-    pip install flask
     python app.py
     open http://localhost:5000
 """
 
 import os
+import pathlib
 import threading
 import time
 from flask import Flask, jsonify, render_template, request
@@ -15,7 +15,13 @@ from flask import Flask, jsonify, render_template, request
 import yaml
 import logger
 
-app = Flask(__name__)
+# ── Absolute paths (safe regardless of where you launch from) ─────────────────
+BASE_DIR = pathlib.Path(__file__).parent.resolve()
+CONFIG_PATH = BASE_DIR / "config.yaml"
+LOG_FILE = str(BASE_DIR / "bot.log")
+EVENT_LOG = str(BASE_DIR / "bot_events.jsonl")
+
+app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
 
 # ── Bot state ─────────────────────────────────────────────────────────────────
 
@@ -41,7 +47,7 @@ def _run_bot(cfg: dict) -> None:
         log_cfg = cfg.get("logging", {})
         logger.setup(
             level=log_cfg.get("level", "INFO"),
-            log_file=log_cfg.get("log_file", "bot.log"),
+            log_file=LOG_FILE,
         )
 
         client = build_client(cfg)
@@ -77,9 +83,11 @@ def start():
     if _bot_status["running"]:
         return jsonify({"ok": False, "error": "Bot is already running."}), 400
 
+    if not CONFIG_PATH.exists():
+        return jsonify({"ok": False, "error": f"config.yaml not found at {CONFIG_PATH}"}), 500
+
     data = request.json or {}
 
-    # ── Validate required fields ──────────────────────────────────────────────
     api_key = data.get("api_key", "").strip()
     api_secret = data.get("api_secret", "").strip()
     token = data.get("token", "BTC/USDT").strip()
@@ -91,36 +99,31 @@ def start():
     if mode == "live" and (not api_key or not api_secret):
         return jsonify({"ok": False, "error": "API key and secret are required for live mode."}), 400
 
-    # Set env vars so exchange_client can read them
     if api_key:
         os.environ["EXCHANGE_API_KEY"] = api_key
     if api_secret:
         os.environ["EXCHANGE_API_SECRET"] = api_secret
 
-    # ── Build config dict ─────────────────────────────────────────────────────
-    with open("config.yaml") as fh:
+    with open(CONFIG_PATH) as fh:
         cfg = yaml.safe_load(fh)
 
     cfg["mode"] = mode
     cfg["exchange"]["symbol"] = token
     cfg["strategy"]["sell_delay_seconds"] = delay
+    cfg["logging"]["log_file"] = LOG_FILE
 
-    # Store amount settings for signal generation
     cfg["_ui"] = {
         "amount_type": amount_type,
         "amount_value": amount_value,
     }
 
-    # Apply amount to risk max position size
     if amount_type == "fixed":
         cfg["risk"]["max_position_size_usd"] = amount_value
     else:
-        # percent: will be resolved at signal time against live balance
         cfg["_ui"]["percent"] = amount_value / 100.0
 
     cfg["logging"]["level"] = "INFO"
 
-    # ── Launch ────────────────────────────────────────────────────────────────
     _stop_event.clear()
     _bot_status.update({
         "running": True,
@@ -146,20 +149,18 @@ def events():
     """Return last N lines from the JSONL event log."""
     import json as _json
     n = int(request.args.get("n", 40))
-    path = "bot_events.jsonl"
-    lines = []
+    rows = []
     try:
-        with open(path) as fh:
+        with open(EVENT_LOG) as fh:
             lines = fh.readlines()
+        for raw in lines[-n:]:
+            try:
+                rows.append(_json.loads(raw))
+            except Exception:
+                pass
+        rows.reverse()
     except FileNotFoundError:
         pass
-    rows = []
-    for raw in lines[-n:]:
-        try:
-            rows.append(_json.loads(raw))
-        except Exception:
-            pass
-    rows.reverse()
     return jsonify(rows)
 
 
@@ -177,4 +178,16 @@ def stop():
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    # Change CWD to the project folder so relative imports always work
+    os.chdir(BASE_DIR)
+
+    port = int(os.environ.get("PORT", 5000))
+    print(f"Starting bot dashboard at http://localhost:{port}")
+    print("Press Ctrl+C to stop.")
+
+    try:
+        from waitress import serve
+        serve(app, host="0.0.0.0", port=port, threads=4)
+    except ImportError:
+        # Fallback to Flask dev server if waitress not installed
+        app.run(host="0.0.0.0", port=port, debug=False)
