@@ -190,9 +190,9 @@
         <div class="space-y-4">
           <div>
             <label class="block text-[10px] text-outline mb-1 uppercase font-bold">Exchange</label>
-            <select id="exchange-name" onchange="onExchangeChange(this)" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none">
-              <option value="binanceth">BinanceTH (THB)</option>
-              <option value="binance" selected>Binance (USDT)</option>
+            <select id="exchange-name" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none">
+              <option value="binanceth" selected>BinanceTH (USDT)</option>
+              <option value="binance">Binance (USDT)</option>
               <option value="bybit">Bybit (USDT)</option>
               <option value="okx">OKX (USDT)</option>
             </select>
@@ -219,36 +219,24 @@
       <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
         <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Trading Focus</h3>
         <div class="grid grid-cols-2 gap-3" id="token-grid">
-          <!-- USDT pairs — visible by default (Binance/Bybit/OKX) -->
-          <button onclick="selectToken(this,'BTC/USDT')" data-token="BTC/USDT" data-quote="USDT"
+          <button onclick="selectToken(this,'BTC/USDT')" data-token="BTC/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary">
             <span class="font-bold tabular-nums">BTC/USDT</span>
             <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">check_circle</span>
           </button>
-          <button onclick="selectToken(this,'ETH/USDT')" data-token="ETH/USDT" data-quote="USDT"
+          <button onclick="selectToken(this,'ETH/USDT')" data-token="ETH/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
             <span class="font-bold tabular-nums">ETH/USDT</span>
             <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
           </button>
-          <button onclick="selectToken(this,'SOL/USDT')" data-token="SOL/USDT" data-quote="USDT"
+          <button onclick="selectToken(this,'SOL/USDT')" data-token="SOL/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
             <span class="font-bold tabular-nums">SOL/USDT</span>
             <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
           </button>
-          <button onclick="selectToken(this,'BNB/USDT')" data-token="BNB/USDT" data-quote="USDT"
+          <button onclick="selectToken(this,'BNB/USDT')" data-token="BNB/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
             <span class="font-bold tabular-nums">BNB/USDT</span>
-            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
-          </button>
-          <!-- THB pairs — only shown when BinanceTH is selected -->
-          <button onclick="selectToken(this,'BTC/THB')" data-token="BTC/THB" data-quote="THB"
-            class="token-btn hidden flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
-            <span class="font-bold tabular-nums">BTC/THB</span>
-            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
-          </button>
-          <button onclick="selectToken(this,'ETH/THB')" data-token="ETH/THB" data-quote="THB"
-            class="token-btn hidden flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
-            <span class="font-bold tabular-nums">ETH/THB</span>
             <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
           </button>
         </div>
@@ -441,32 +429,13 @@
   function selectToken(el, tok) {
     selectedToken = tok;
     document.querySelectorAll('.token-btn').forEach(b => {
-      if (b.classList.contains('hidden')) return;
       const active = b.dataset.token === tok;
-      b.className = (active
+      b.className = active
         ? 'token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary'
-        : 'token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors');
+        : 'token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors';
       b.querySelector('.material-symbols-outlined').textContent = active ? 'check_circle' : 'radio_button_unchecked';
       b.querySelector('.material-symbols-outlined').style.fontVariationSettings = active ? "'FILL' 1" : "'FILL' 0";
     });
-  }
-
-  function onExchangeChange(sel) {
-    const isTHB = sel.value === 'binanceth';
-    const quote = isTHB ? 'THB' : 'USDT';
-    document.querySelectorAll('.token-btn').forEach(b => {
-      const show = b.dataset.quote === quote;
-      b.classList.toggle('hidden', !show);
-      // reset to inactive style
-      b.className = (show ? '' : 'hidden ') +
-        'token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors';
-      b.querySelector('.material-symbols-outlined').textContent = 'radio_button_unchecked';
-      b.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 0";
-    });
-    // auto-select default token for the exchange
-    const defaultTok = isTHB ? 'BTC/THB' : 'BTC/USDT';
-    const defaultBtn = document.querySelector(`.token-btn[data-token="${defaultTok}"]`);
-    if (defaultBtn) selectToken(defaultBtn, defaultTok);
   }
 
   // ── Amount Type ───────────────────────────────────────────────────────────
