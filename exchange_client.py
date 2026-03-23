@@ -210,6 +210,169 @@ class PaperExchangeClient(ExchangeClient):
         return self._fee_pct
 
 
+# ── BinanceTH native client ───────────────────────────────────────────────────
+
+class BinanceTHExchangeClient(ExchangeClient):
+    """
+    Native REST client for BinanceTH (Gulf Binance / binance.th).
+
+    Uses /api/v1/ — NOT compatible with standard ccxt Binance.
+    ENV VARS: EXCHANGE_API_KEY / EXCHANGE_API_SECRET
+    Docs:     https://www.binance.th/api-docs/en/
+    """
+
+    _BASE = "https://api.binance.th"
+
+    def __init__(self, cfg: dict) -> None:
+        import hashlib
+        import hmac as _hmac
+
+        try:
+            import requests as _req
+        except ImportError:
+            raise ImportError("Install requests first:  pip install requests")
+
+        self._session = _req.Session()
+        self._hashlib = hashlib
+        self._hmac = _hmac
+        self._api_key = os.environ["EXCHANGE_API_KEY"]
+        self._secret = os.environ["EXCHANGE_API_SECRET"].encode()
+
+        ex_cfg = cfg.get("exchange", {})
+        self._symbol = ex_cfg.get("symbol", "BTC/THB")
+        fee_cfg = cfg.get("fees", {})
+        self._taker_fee = float(fee_cfg.get("taker_pct", 0.25)) / 100.0
+        self._maker_fee = float(fee_cfg.get("maker_pct", 0.25)) / 100.0
+        logger.info(f"[BinanceTH] Client initialised  symbol={self._symbol}")
+
+    # ── Internal helpers ──────────────────────────────────────────────────────
+
+    @staticmethod
+    def _to_exchange_symbol(symbol: str) -> str:
+        """Convert 'BTC/THB' → 'BTCTHB'."""
+        return symbol.replace("/", "")
+
+    def _sign(self, params: dict) -> dict:
+        params["timestamp"] = int(time.time() * 1000)
+        query = "&".join(f"{k}={v}" for k, v in params.items())
+        params["signature"] = self._hmac.new(
+            self._secret, query.encode(), self._hashlib.sha256
+        ).hexdigest()
+        return params
+
+    def _headers(self) -> dict:
+        return {"X-MBX-APIKEY": self._api_key}
+
+    def _get(self, path: str, params: dict = None, signed: bool = False) -> dict:
+        if signed:
+            params = self._sign(params or {})
+        r = self._session.get(
+            self._BASE + path, params=params, headers=self._headers(), timeout=10
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def _post(self, path: str, params: dict) -> dict:
+        params = self._sign(params)
+        r = self._session.post(
+            self._BASE + path, params=params, headers=self._headers(), timeout=10
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def _delete(self, path: str, params: dict) -> dict:
+        params = self._sign(params)
+        r = self._session.delete(
+            self._BASE + path, params=params, headers=self._headers(), timeout=10
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def _map_order(self, raw: dict) -> Order:
+        status_map = {
+            "NEW": "open",
+            "PARTIALLY_FILLED": "partially_filled",
+            "FILLED": "filled",
+            "CANCELED": "cancelled",
+            "REJECTED": "cancelled",
+            "EXPIRED": "cancelled",
+        }
+        filled = float(raw.get("executedQty") or 0.0)
+        amount = float(raw.get("origQty") or 0.0)
+        status = status_map.get(raw.get("status", "NEW"), "open")
+
+        cum_quote = float(raw.get("cummulativeQuoteQty") or 0.0)
+        avg_price = (cum_quote / filled) if filled > 0 else float(raw.get("price") or 0.0)
+
+        return Order(
+            order_id=str(raw["orderId"]),
+            symbol=self._symbol,
+            side=raw.get("side", "BUY").lower(),
+            order_type=raw.get("type", "MARKET").lower(),
+            quantity=amount,
+            price=float(raw.get("price") or 0.0) or None,
+            status=status,
+            filled_qty=filled,
+            avg_fill_price=avg_price,
+            fee=filled * avg_price * self._taker_fee,  # estimated; BinanceTH doesn't return fee on order
+            created_at=float(raw.get("transactTime", raw.get("time", 0))) / 1000.0,
+            updated_at=time.time(),
+        )
+
+    # ── Public API ────────────────────────────────────────────────────────────
+
+    def get_order_book(self, symbol: str, depth: int = 20) -> OrderBook:
+        raw = self._get("/api/v1/depth", {
+            "symbol": self._to_exchange_symbol(symbol),
+            "limit": depth,
+        })
+        return OrderBook(
+            symbol=symbol,
+            bids=[(float(p), float(q)) for p, q in raw["bids"]],
+            asks=[(float(p), float(q)) for p, q in raw["asks"]],
+        )
+
+    def get_balance(self) -> Balance:
+        raw = self._get("/api/v1/accountV2", signed=True)
+        free = {b["asset"]: float(b["free"]) for b in raw.get("balances", [])}
+        base, quote = self._symbol.split("/")
+        return Balance(base=free.get(base, 0.0), quote=free.get(quote, 0.0))
+
+    def place_order(self, symbol: str, side: str, order_type: str,
+                    quantity: float, price: Optional[float] = None) -> Order:
+        params: dict = {
+            "symbol": self._to_exchange_symbol(symbol),
+            "side": side.upper(),
+            "type": order_type.upper(),
+            "quantity": quantity,
+        }
+        if order_type.lower() == "limit" and price is not None:
+            params["price"] = price
+            params["timeInForce"] = "GTC"
+        return self._map_order(self._post("/api/v1/order", params))
+
+    def get_order(self, order_id: str, symbol: str) -> Order:
+        raw = self._get("/api/v1/order", {
+            "symbol": self._to_exchange_symbol(symbol),
+            "orderId": order_id,
+        }, signed=True)
+        return self._map_order(raw)
+
+    def cancel_order(self, order_id: str, symbol: str) -> bool:
+        try:
+            self._delete("/api/v1/order", {
+                "symbol": self._to_exchange_symbol(symbol),
+                "orderId": order_id,
+            })
+            return True
+        except Exception as exc:
+            logger.error(f"[BinanceTH] Failed to cancel order {order_id}", exc)
+            return False
+
+    def get_fee_rate(self, order_type: str = "taker") -> float:
+        return self._taker_fee if order_type == "taker" else self._maker_fee
+
+
 # ── Live trading client ───────────────────────────────────────────────────────
 
 class LiveExchangeClient(ExchangeClient):
@@ -322,6 +485,8 @@ def build_client(cfg: dict) -> ExchangeClient:
     if mode == "paper":
         return PaperExchangeClient(cfg)
     elif mode == "live":
+        if cfg.get("exchange", {}).get("name") == "binanceth":
+            return BinanceTHExchangeClient(cfg)
         return LiveExchangeClient(cfg)
     else:
         raise ValueError(f"Unknown mode: {mode!r}  (expected 'paper' or 'live')")
