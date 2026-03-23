@@ -6,8 +6,8 @@
 
 # ── Exchange ─────────────────────────────────────────────────
 exchange:
-  name: "binance"          # use "binanceth" for BinanceTH native client; ccxt id otherwise
-  symbol: "BTC/USDT"
+  name: "binanceth"        # use "binanceth" for BinanceTH native client; ccxt id otherwise
+  symbol: "BTC/THB"
   market_type: "spot"      # spot | futures
 
 # ── Mode ─────────────────────────────────────────────────────

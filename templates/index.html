@@ -191,10 +191,10 @@
           <div>
             <label class="block text-[10px] text-outline mb-1 uppercase font-bold">Exchange</label>
             <select id="exchange-name" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none">
+              <option value="binanceth" selected>BinanceTH (THB)</option>
               <option value="binance">Binance (USDT)</option>
               <option value="bybit">Bybit (USDT)</option>
               <option value="okx">OKX (USDT)</option>
-              <option value="binanceth">BinanceTH (THB)</option>
             </select>
           </div>
           <div>
@@ -219,10 +219,20 @@
       <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
         <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Trading Focus</h3>
         <div class="grid grid-cols-2 gap-3" id="token-grid">
-          <button onclick="selectToken(this,'BTC/USDT')" data-token="BTC/USDT"
+          <button onclick="selectToken(this,'BTC/THB')" data-token="BTC/THB"
             class="token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary">
-            <span class="font-bold tabular-nums">BTC/USDT</span>
+            <span class="font-bold tabular-nums">BTC/THB</span>
             <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">check_circle</span>
+          </button>
+          <button onclick="selectToken(this,'ETH/THB')" data-token="ETH/THB"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">ETH/THB</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+          <button onclick="selectToken(this,'BTC/USDT')" data-token="BTC/USDT"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">BTC/USDT</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
           </button>
           <button onclick="selectToken(this,'ETH/USDT')" data-token="ETH/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
@@ -417,7 +427,7 @@
   // ── State ────────────────────────────────────────────────────────────────
   let mode = 'live';
   let amountType = 'fixed';
-  let selectedToken = 'BTC/USDT';
+  let selectedToken = 'BTC/THB';
   let tradeCount = 0;
 
   // ── Mode ─────────────────────────────────────────────────────────────────
