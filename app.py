@@ -10,7 +10,7 @@ import os
 import pathlib
 import threading
 import time
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, Response
 
 import yaml
 import logger
@@ -93,6 +93,7 @@ def start():
 
     api_key = data.get("api_key", "").strip()
     api_secret = data.get("api_secret", "").strip()
+    exchange_name = data.get("exchange_name", "binance").strip()
     token = data.get("token", "BTC/USDT").strip()
     delay = int(data.get("delay", 45))
     profit_target = float(data.get("profit_target", 0.5))
@@ -100,6 +101,7 @@ def start():
     amount_type = data.get("amount_type", "fixed")   # fixed | percent
     amount_value = float(data.get("amount_value", 100))
     min_balance = float(data.get("min_balance", 50))
+    min_liquidity = float(data.get("min_liquidity", 1000))
     mode = data.get("mode", "live")
 
     if mode == "live" and (not api_key or not api_secret):
@@ -114,6 +116,7 @@ def start():
         cfg = yaml.safe_load(fh)
 
     cfg["mode"] = mode
+    cfg["exchange"]["name"] = exchange_name
     cfg["exchange"]["symbol"] = token
     cfg["strategy"]["sell_delay_seconds"] = delay
     cfg["strategy"]["profit_target_pct"] = profit_target
@@ -131,6 +134,7 @@ def start():
         cfg["_ui"]["percent"] = amount_value / 100.0
 
     cfg["risk"]["min_balance_usd"] = min_balance
+    cfg["risk"]["min_order_book_depth_usd"] = min_liquidity
     cfg["logging"]["level"] = "INFO"
 
     _stop_event.clear()
@@ -144,6 +148,7 @@ def start():
             "profit_target": profit_target,
             "limit_sell_offset": limit_sell_offset,
             "min_balance": min_balance,
+            "min_liquidity": min_liquidity,
             "amount_type": amount_type,
             "amount_value": amount_value,
             "mode": mode,
@@ -187,6 +192,8 @@ def update_config():
     limit_sell_offset = float(data.get("limit_sell_offset", 0.1))
     amount_type = data.get("amount_type", "fixed")
     amount_value = float(data.get("amount_value", 100))
+    min_balance = float(data.get("min_balance", 50))
+    min_liquidity = float(data.get("min_liquidity", 1000))
 
     if _strategy_ref is not None:
         _strategy_ref.update_settings(
@@ -195,6 +202,8 @@ def update_config():
             limit_sell_offset=limit_sell_offset,
             amount_type=amount_type,
             amount_value=amount_value,
+            min_balance=min_balance,
+            min_liquidity=min_liquidity,
         )
 
     _bot_status["config"].update({
@@ -203,11 +212,103 @@ def update_config():
         "limit_sell_offset": limit_sell_offset,
         "amount_type": amount_type,
         "amount_value": amount_value,
+        "min_balance": min_balance,
+        "min_liquidity": min_liquidity,
     })
 
     return jsonify({"ok": True})
 
 
+
+@app.route("/export/csv")
+def export_csv():
+    """Download all events as a CSV file."""
+    import json as _json
+    import csv
+    import io
+
+    # Collect all known fields across event types for stable column order
+    FIELDS = [
+        "ts", "event", "symbol", "side", "order_id", "qty", "price",
+        "filled_qty", "avg_price", "fee", "buy_price", "sell_price",
+        "buy_fee", "sell_fee", "realized_pnl", "delay_seconds",
+        "reason", "msg", "exc",
+    ]
+
+    rows = []
+    try:
+        with open(EVENT_LOG) as fh:
+            for line in fh:
+                try:
+                    rows.append(_json.loads(line))
+                except Exception:
+                    pass
+    except FileNotFoundError:
+        pass
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=FIELDS, extrasaction="ignore")
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(row)
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=bot_events.csv"},
+    )
+
+
+@app.route("/export/errors")
+def export_errors():
+    """Download only error and risk_rejected events as CSV."""
+    import json as _json
+    import csv
+    import io
+
+    ERROR_EVENTS = {"error", "risk_rejected", "order_cancelled"}
+    FIELDS = ["ts", "event", "reason", "msg", "exc", "order_id"]
+
+    rows = []
+    try:
+        with open(EVENT_LOG) as fh:
+            for line in fh:
+                try:
+                    ev = _json.loads(line)
+                    if ev.get("event") in ERROR_EVENTS:
+                        rows.append(ev)
+                except Exception:
+                    pass
+    except FileNotFoundError:
+        pass
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=FIELDS, extrasaction="ignore")
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(row)
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=bot_errors.csv"},
+    )
+
+
+@app.route("/export/log")
+def export_log():
+    """Download the raw bot.log file."""
+    try:
+        with open(LOG_FILE) as fh:
+            content = fh.read()
+    except FileNotFoundError:
+        content = "(log file not found)"
+
+    return Response(
+        content,
+        mimetype="text/plain",
+        headers={"Content-Disposition": "attachment; filename=bot.log"},
+    )
 
 @app.route("/force_buy", methods=["POST"])
 def force_buy():

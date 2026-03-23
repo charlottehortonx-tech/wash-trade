@@ -67,6 +67,15 @@ class RiskManager:
         while self._recent_trades and self._recent_trades[0] < cutoff:
             self._recent_trades.popleft()
 
+    def update_settings(self, min_balance: float, min_liquidity: float, max_position: float) -> None:
+        self._min_balance_usd = min_balance
+        self._min_depth_usd = min_liquidity
+        self._max_position_usd = max_position
+        logger.info(
+            f"[Risk] Settings updated  min_balance={min_balance}  "
+            f"min_liquidity={min_liquidity}  max_position={max_position}"
+        )
+
     # ── Position state ────────────────────────────────────────────────────────
 
     def set_position_open(self) -> None:

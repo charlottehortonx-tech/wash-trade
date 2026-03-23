@@ -189,6 +189,15 @@
         </h3>
         <div class="space-y-4">
           <div>
+            <label class="block text-[10px] text-outline mb-1 uppercase font-bold">Exchange</label>
+            <select id="exchange-name" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none">
+              <option value="binanceth" selected>BinanceTH (THB)</option>
+              <option value="binance">Binance (USDT)</option>
+              <option value="bybit">Bybit (USDT)</option>
+              <option value="okx">OKX (USDT)</option>
+            </select>
+          </div>
+          <div>
             <label class="block text-[10px] text-outline mb-1 uppercase font-bold">API Key</label>
             <div class="relative">
               <input id="api-key" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="password" placeholder="Paste your exchange API key"/>
@@ -210,10 +219,20 @@
       <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
         <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Trading Focus</h3>
         <div class="grid grid-cols-2 gap-3" id="token-grid">
-          <button onclick="selectToken(this,'BTC/USDT')" data-token="BTC/USDT"
+          <button onclick="selectToken(this,'BTC/THB')" data-token="BTC/THB"
             class="token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary">
-            <span class="font-bold tabular-nums">BTC/USDT</span>
+            <span class="font-bold tabular-nums">BTC/THB</span>
             <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">check_circle</span>
+          </button>
+          <button onclick="selectToken(this,'ETH/THB')" data-token="ETH/THB"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">ETH/THB</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+          <button onclick="selectToken(this,'BTC/USDT')" data-token="BTC/USDT"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">BTC/USDT</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
           </button>
           <button onclick="selectToken(this,'ETH/USDT')" data-token="ETH/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
@@ -228,6 +247,16 @@
           <button onclick="selectToken(this,'BNB/USDT')" data-token="BNB/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
             <span class="font-bold tabular-nums">BNB/USDT</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+          <button onclick="selectToken(this,'BTC/THB')" data-token="BTC/THB"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">BTC/THB</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+          <button onclick="selectToken(this,'ETH/THB')" data-token="ETH/THB"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">ETH/THB</span>
             <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
           </button>
         </div>
@@ -270,14 +299,26 @@
         </div>
       </div>
 
-      <!-- Min Balance -->
+      <!-- Min Balance + Min Liquidity -->
       <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
-        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Min Balance</h3>
-        <div class="relative">
-          <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">$</span>
-          <input id="min-balance" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-4 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="50" min="0" step="0.01" placeholder="50"/>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">Min Balance</h3>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">$</span>
+              <input id="min-balance" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-4 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="50" min="0" step="0.01" placeholder="50"/>
+            </div>
+            <p class="mt-2 text-[10px] text-outline">Halt when balance below this.</p>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">Min Liquidity</h3>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">$</span>
+              <input id="min-liquidity" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-4 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="1000" min="0" step="1" placeholder="1000"/>
+            </div>
+            <p class="mt-2 text-[10px] text-outline">Min order book depth to trade.</p>
+          </div>
         </div>
-        <p class="mt-2 text-[10px] text-outline">Bot refuses to trade when balance drops below this amount.</p>
       </div>
 
       <!-- Allocation -->
@@ -338,7 +379,34 @@
             <span class="w-2 h-2 rounded-full bg-outline" id="log-dot"></span>
             Live Event Log
           </h3>
-          <span class="text-[10px] text-outline" id="log-count"></span>
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] text-outline" id="log-count"></span>
+            <!-- Export dropdown -->
+            <div class="relative" id="export-menu-wrap">
+              <button onclick="toggleExportMenu()"
+                class="flex items-center gap-1 px-2 py-1 bg-surface-container-highest rounded border border-outline-variant/20 text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-sm">download</span>
+                EXPORT
+              </button>
+              <div id="export-menu" class="hidden absolute right-0 top-8 z-50 bg-surface-container-highest border border-outline-variant/20 rounded-lg shadow-xl w-44 py-1">
+                <a href="/export/csv" download
+                  class="flex items-center gap-2 px-4 py-2 text-xs text-on-surface hover:bg-surface-container transition-colors">
+                  <span class="material-symbols-outlined text-sm text-secondary">table_chart</span>
+                  All Events (CSV)
+                </a>
+                <a href="/export/errors" download
+                  class="flex items-center gap-2 px-4 py-2 text-xs text-on-surface hover:bg-surface-container transition-colors">
+                  <span class="material-symbols-outlined text-sm text-error">error</span>
+                  Errors Only (CSV)
+                </a>
+                <a href="/export/log" download
+                  class="flex items-center gap-2 px-4 py-2 text-xs text-on-surface hover:bg-surface-container transition-colors">
+                  <span class="material-symbols-outlined text-sm text-outline">text_snippet</span>
+                  Raw Log (.log)
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="flex-1 overflow-y-auto p-2 space-y-1 font-mono text-[11px]" id="event-log">
           <div class="flex items-center gap-4 px-4 py-4 text-outline/50 justify-center">
@@ -359,7 +427,7 @@
   // ── State ────────────────────────────────────────────────────────────────
   let mode = 'live';
   let amountType = 'fixed';
-  let selectedToken = 'BTC/USDT';
+  let selectedToken = 'BTC/THB';
   let tradeCount = 0;
 
   // ── Mode ─────────────────────────────────────────────────────────────────
@@ -415,6 +483,16 @@
   }
 
   // ── Toast ─────────────────────────────────────────────────────────────────
+  function toggleExportMenu() {
+    const menu = document.getElementById('export-menu');
+    menu.classList.toggle('hidden');
+  }
+  document.addEventListener('click', e => {
+    if (!document.getElementById('export-menu-wrap').contains(e.target)) {
+      document.getElementById('export-menu').classList.add('hidden');
+    }
+  });
+
   function showToast(msg, type = 'error') {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -429,6 +507,7 @@
   async function startBot() {
     const payload = {
       mode,
+      exchange_name:     document.getElementById('exchange-name').value,
       api_key:           document.getElementById('api-key').value.trim(),
       api_secret:        document.getElementById('api-secret').value.trim(),
       token:             selectedToken,
@@ -436,6 +515,7 @@
       profit_target:     parseFloat(document.getElementById('profit-val').value) || 0.5,
       limit_sell_offset: parseFloat(document.getElementById('limit-sell-val').value) || 0.1,
       min_balance:       parseFloat(document.getElementById('min-balance').value) || 0,
+      min_liquidity:     parseFloat(document.getElementById('min-liquidity').value) || 1000,
       amount_type:       amountType,
       amount_value:      parseFloat(document.getElementById('amount-value').value) || 100,
     };
@@ -471,11 +551,13 @@
 
   async function saveSettings() {
     const payload = {
-      delay:             delayVal,
-      profit_target:     profitTarget,
-      limit_sell_offset: limitSellOffset,
+      delay:             parseInt(document.getElementById('delay-val').value) || 45,
+      profit_target:     parseFloat(document.getElementById('profit-val').value) || 0.5,
+      limit_sell_offset: parseFloat(document.getElementById('limit-sell-val').value) || 0.1,
       amount_type:       amountType,
       amount_value:      parseFloat(document.getElementById('amount-value').value) || 100,
+      min_balance:       parseFloat(document.getElementById('min-balance').value) || 0,
+      min_liquidity:     parseFloat(document.getElementById('min-liquidity').value) || 1000,
     };
     const btn = document.getElementById('save-btn');
     btn.classList.add('opacity-40', 'cursor-not-allowed');

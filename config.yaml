@@ -38,7 +38,7 @@ risk:
   consecutive_loss_cooldown_seconds: 300  # cooldown after 3 losses in a row
   consecutive_losses_threshold: 3
   min_balance_usd: 50.0            # refuse to trade below this balance
-  min_order_book_depth_usd: 10000  # minimum bid/ask depth at top levels
+  min_order_book_depth_usd: 1000   # minimum bid/ask depth at top levels
   max_slippage_pct: 0.30           # reject if estimated slippage > 0.30%
   max_fee_pct: 0.20                # reject if estimated fees > 0.20% of trade
 
