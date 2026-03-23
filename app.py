@@ -91,7 +91,9 @@ def start():
     api_key = data.get("api_key", "").strip()
     api_secret = data.get("api_secret", "").strip()
     token = data.get("token", "BTC/USDT").strip()
-    delay = int(data.get("delay", 30))
+    delay = int(data.get("delay", 45))
+    profit_target = float(data.get("profit_target", 0.5))
+    limit_sell_offset = float(data.get("limit_sell_offset", 0.1))
     amount_type = data.get("amount_type", "fixed")   # fixed | percent
     amount_value = float(data.get("amount_value", 100))
     mode = data.get("mode", "live")
@@ -110,6 +112,8 @@ def start():
     cfg["mode"] = mode
     cfg["exchange"]["symbol"] = token
     cfg["strategy"]["sell_delay_seconds"] = delay
+    cfg["strategy"]["profit_target_pct"] = profit_target
+    cfg["strategy"]["limit_sell_offset_pct"] = limit_sell_offset
     cfg["logging"]["log_file"] = LOG_FILE
 
     cfg["_ui"] = {
@@ -132,6 +136,8 @@ def start():
         "config": {
             "token": token,
             "delay": delay,
+            "profit_target": profit_target,
+            "limit_sell_offset": limit_sell_offset,
             "amount_type": amount_type,
             "amount_value": amount_value,
             "mode": mode,
