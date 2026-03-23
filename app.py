@@ -173,6 +173,55 @@ def events():
     return jsonify(rows)
 
 
+@app.route("/force_buy", methods=["POST"])
+def force_buy():
+    """Trigger an immediate market buy, bypassing the signal check."""
+    if not _bot_status["running"]:
+        return jsonify({"ok": False, "error": "Bot is not running."}), 400
+
+    def _do_force_buy():
+        try:
+            from exchange_client import build_client
+            from execution import ExecutionEngine
+            from risk_manager import RiskManager
+            from strategy import BuySignal, Strategy
+
+            with open(CONFIG_PATH) as fh:
+                cfg = yaml.safe_load(fh)
+
+            running_cfg = _bot_status.get("config", {})
+            cfg["mode"] = running_cfg.get("mode", cfg.get("mode", "paper"))
+            cfg["exchange"]["symbol"] = running_cfg.get("token", cfg["exchange"]["symbol"])
+            cfg["strategy"]["sell_delay_seconds"] = running_cfg.get("delay", 45)
+            cfg["strategy"]["profit_target_pct"] = running_cfg.get("profit_target", 0.5)
+            cfg["strategy"]["limit_sell_offset_pct"] = running_cfg.get("limit_sell_offset", 0.1)
+
+            client = build_client(cfg)
+            risk = RiskManager(cfg, client)
+            engine = ExecutionEngine(cfg, client)
+
+            symbol = cfg["exchange"]["symbol"]
+            book = client.get_order_book(symbol)
+            mid = book.mid_price
+
+            amount_type = running_cfg.get("amount_type", "fixed")
+            amount_value = float(running_cfg.get("amount_value", 100))
+            if amount_type == "percent":
+                balance = client.get_balance()
+                qty = round(balance * (amount_value / 100.0) / mid, 8) if mid > 0 else 0.0
+            else:
+                qty = round(amount_value / mid, 8) if mid > 0 else 0.0
+
+            signal = BuySignal(symbol=symbol, suggested_quantity_base=qty, source="force_buy")
+            strat = Strategy(cfg, client, risk, engine)
+            strat.run_trade_cycle(signal, book)
+        except Exception as exc:
+            logger.error("[App] Force buy failed", exc)
+
+    threading.Thread(target=_do_force_buy, daemon=True).start()
+    return jsonify({"ok": True})
+
+
 @app.route("/stop", methods=["POST"])
 def stop():
     global _bot_status

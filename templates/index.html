@@ -164,6 +164,11 @@
       <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">stop</span>
       STOP BOT
     </button>
+    <button id="force-buy-btn" onclick="forceBuy()"
+      class="flex-1 h-16 bg-primary/10 text-primary rounded-lg font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all border border-primary/30 group opacity-40 cursor-not-allowed">
+      <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">bolt</span>
+      FORCE BUY
+    </button>
   </section>
 
   <div class="grid grid-cols-12 gap-6">
@@ -448,6 +453,20 @@
     pollStatus();
   }
 
+  async function forceBuy() {
+    const btn = document.getElementById('force-buy-btn');
+    if (btn.classList.contains('cursor-not-allowed')) return;
+    btn.classList.add('opacity-40', 'cursor-not-allowed');
+    const r = await fetch('/force_buy', { method:'POST' });
+    const d = await r.json();
+    if (!d.ok) showToast(d.error || 'Force buy failed.');
+    else showToast('Force buy triggered — executing trade cycle.', 'info');
+    setTimeout(() => {
+      if (!btn.classList.contains('cursor-not-allowed')) return;
+      btn.classList.remove('opacity-40', 'cursor-not-allowed');
+    }, 3000);
+  }
+
   // ── Status Polling ────────────────────────────────────────────────────────
   function applyStatus(data) {
     const running = data.running;
@@ -472,15 +491,18 @@
       ? 'w-2 h-2 rounded-full bg-secondary animate-pulse'
       : 'w-2 h-2 rounded-full bg-outline';
 
-    // Start/Stop buttons
-    const startBtn = document.getElementById('start-btn');
-    const stopBtn  = document.getElementById('stop-btn');
+    // Start/Stop/ForceBuy buttons
+    const startBtn    = document.getElementById('start-btn');
+    const stopBtn     = document.getElementById('stop-btn');
+    const forceBuyBtn = document.getElementById('force-buy-btn');
     if (running) {
       startBtn.classList.add('opacity-40','cursor-not-allowed');
       stopBtn.classList.remove('opacity-40','cursor-not-allowed');
+      forceBuyBtn.classList.remove('opacity-40','cursor-not-allowed');
     } else {
       startBtn.classList.remove('opacity-40','cursor-not-allowed');
       stopBtn.classList.add('opacity-40','cursor-not-allowed');
+      forceBuyBtn.classList.add('opacity-40','cursor-not-allowed');
     }
 
     // Stats
