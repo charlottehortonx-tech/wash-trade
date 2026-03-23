@@ -189,6 +189,15 @@
         </h3>
         <div class="space-y-4">
           <div>
+            <label class="block text-[10px] text-outline mb-1 uppercase font-bold">Exchange</label>
+            <select id="exchange-name" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none">
+              <option value="binance">Binance (USDT)</option>
+              <option value="bybit">Bybit (USDT)</option>
+              <option value="okx">OKX (USDT)</option>
+              <option value="binanceth">BinanceTH (THB)</option>
+            </select>
+          </div>
+          <div>
             <label class="block text-[10px] text-outline mb-1 uppercase font-bold">API Key</label>
             <div class="relative">
               <input id="api-key" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="password" placeholder="Paste your exchange API key"/>
@@ -228,6 +237,16 @@
           <button onclick="selectToken(this,'BNB/USDT')" data-token="BNB/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
             <span class="font-bold tabular-nums">BNB/USDT</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+          <button onclick="selectToken(this,'BTC/THB')" data-token="BTC/THB"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">BTC/THB</span>
+            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+          </button>
+          <button onclick="selectToken(this,'ETH/THB')" data-token="ETH/THB"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">ETH/THB</span>
             <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
           </button>
         </div>
@@ -478,6 +497,7 @@
   async function startBot() {
     const payload = {
       mode,
+      exchange_name:     document.getElementById('exchange-name').value,
       api_key:           document.getElementById('api-key').value.trim(),
       api_secret:        document.getElementById('api-secret').value.trim(),
       token:             selectedToken,

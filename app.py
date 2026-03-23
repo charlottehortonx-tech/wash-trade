@@ -93,6 +93,7 @@ def start():
 
     api_key = data.get("api_key", "").strip()
     api_secret = data.get("api_secret", "").strip()
+    exchange_name = data.get("exchange_name", "binance").strip()
     token = data.get("token", "BTC/USDT").strip()
     delay = int(data.get("delay", 45))
     profit_target = float(data.get("profit_target", 0.5))
@@ -115,6 +116,7 @@ def start():
         cfg = yaml.safe_load(fh)
 
     cfg["mode"] = mode
+    cfg["exchange"]["name"] = exchange_name
     cfg["exchange"]["symbol"] = token
     cfg["strategy"]["sell_delay_seconds"] = delay
     cfg["strategy"]["profit_target_pct"] = profit_target
