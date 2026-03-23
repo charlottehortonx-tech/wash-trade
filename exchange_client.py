@@ -368,12 +368,17 @@ class BinanceTHExchangeClient(ExchangeClient):
             params["timeInForce"] = "GTC"
         order = self._map_order(self._post("/api/v1/order", params))
         # BinanceTH market orders sometimes return cummulativeQuoteQty=0 immediately.
-        # Re-fetch once to get the real avg fill price if it's missing.
+        # Retry re-fetch up to 3 times with short backoff to get the real avg fill price.
         if order.status == "filled" and order.avg_fill_price == 0.0:
-            try:
-                order = self.get_order(order.order_id, symbol)
-            except Exception:
-                pass
+            for _attempt in range(3):
+                time.sleep(0.5 * (_attempt + 1))
+                try:
+                    refreshed = self.get_order(order.order_id, symbol)
+                    if refreshed.avg_fill_price > 0.0:
+                        order = refreshed
+                        break
+                except Exception:
+                    pass
         return order
 
     def get_order(self, order_id: str, symbol: str) -> Order:

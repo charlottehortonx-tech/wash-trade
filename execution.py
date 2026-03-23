@@ -80,7 +80,9 @@ class ExecutionEngine:
         Returns the latest Order state.
         """
         # Short-circuit: exchange may return a terminal status from place_order itself.
-        if order.status in ("filled", "cancelled"):
+        # Exception: if filled but avg_fill_price is 0.0, fall through to re-poll so
+        # the exchange has time to populate the fill price (BinanceTH timing issue).
+        if order.status in ("filled", "cancelled") and order.avg_fill_price > 0.0:
             return order
 
         deadline = time.time() + timeout
