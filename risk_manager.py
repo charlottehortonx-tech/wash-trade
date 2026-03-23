@@ -53,8 +53,11 @@ class RiskManager:
     @staticmethod
     def _today_start() -> float:
         import datetime
-        now = datetime.datetime.utcnow()
-        return datetime.datetime(now.year, now.month, now.day).timestamp()
+        now = datetime.datetime.now(datetime.timezone.utc)
+        midnight = datetime.datetime(
+            now.year, now.month, now.day, tzinfo=datetime.timezone.utc
+        )
+        return midnight.timestamp()
 
     def _reset_daily_if_needed(self) -> None:
         if time.time() >= self._day_start + 86_400:
