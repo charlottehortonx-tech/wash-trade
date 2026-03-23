@@ -122,9 +122,12 @@ class Strategy:
         # ── 6. Place SELL ─────────────────────────────────────────────────────
         sell_fee = self._engine.place_sell(position, sell_mid)
         if sell_fee is None:
-            logger.error("[Strategy] Failed to close position — manual intervention needed.")
-            # Still mark closed in risk manager to unblock next trades after cooldown
-            self._risk.set_position_closed(realized_pnl=-9999.0)
+            logger.error(
+                "[Strategy] Failed to close position — bot halted. "
+                "Resolve the open position manually and restart."
+            )
+            # Do NOT clear the open-position flag. This keeps _has_open_position=True
+            # so check_all() will reject every future signal until the bot is restarted.
             return False
 
         # ── 7. PnL accounting ─────────────────────────────────────────────────
