@@ -93,15 +93,20 @@ class Strategy:
     # ── Quantity calculation ──────────────────────────────────────────────────
 
     def _calc_qty(self, mid_price: float) -> float:
+        """Compute order quantity from configured amount type and value."""
+        import math
         if mid_price <= 0:
             return 0.0
         if self._amount_type == "percent":
             try:
                 balance = self._client.get_balance()
-                return round(balance.quote * self._amount_pct / mid_price, 8)
+                raw = balance.quote * self._amount_pct / mid_price
             except Exception:
                 return 0.0
-        return round(self._amount_value / mid_price, 8)
+        else:
+            raw = self._amount_value / mid_price
+        # Floor to 8 decimal places so qty * price never exceeds the budget
+        return math.floor(raw * 1e8) / 1e8
 
     # ── Single trade cycle ────────────────────────────────────────────────────
 
