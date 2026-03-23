@@ -240,10 +240,11 @@ class BinanceTHExchangeClient(ExchangeClient):
 
         ex_cfg = cfg.get("exchange", {})
         self._symbol = ex_cfg.get("symbol", "BTC/THB")
+        self._qty_step: float = float(ex_cfg.get("qty_step", 0.00001))
         fee_cfg = cfg.get("fees", {})
         self._taker_fee = float(fee_cfg.get("taker_pct", 0.25)) / 100.0
         self._maker_fee = float(fee_cfg.get("maker_pct", 0.25)) / 100.0
-        logger.info(f"[BinanceTH] Client initialised  symbol={self._symbol}")
+        logger.info(f"[BinanceTH] Client initialised  symbol={self._symbol}  qty_step={self._qty_step}")
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
@@ -338,13 +339,20 @@ class BinanceTHExchangeClient(ExchangeClient):
         base, quote = self._symbol.split("/")
         return Balance(base=free.get(base, 0.0), quote=free.get(quote, 0.0))
 
+    def _round_qty(self, quantity: float) -> float:
+        """Floor quantity to the exchange LOT_SIZE step to avoid precision errors."""
+        import math
+        steps = math.floor(quantity / self._qty_step)
+        return round(steps * self._qty_step, 10)
+
     def place_order(self, symbol: str, side: str, order_type: str,
                     quantity: float, price: Optional[float] = None) -> Order:
+        quantity = self._round_qty(quantity)
         params: dict = {
             "symbol": self._to_exchange_symbol(symbol),
             "side": side.upper(),
             "type": order_type.upper(),
-            "quantity": quantity,
+            "quantity": f"{quantity:.8f}".rstrip("0").rstrip("."),
         }
         if order_type.lower() == "limit" and price is not None:
             params["price"] = price
