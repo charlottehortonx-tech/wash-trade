@@ -30,6 +30,7 @@ execution:
   sell_retry_attempts: 5
   sell_retry_delay_seconds: 3
   stale_order_timeout_seconds: 30
+  min_sell_notional_usd: 1.5   # treat remaining qty as dust if notional < this
 
 # ── Risk Management ───────────────────────────────────────────
 risk:
