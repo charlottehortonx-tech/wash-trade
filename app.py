@@ -94,7 +94,7 @@ def start():
     delay = int(data.get("delay", 30))
     amount_type = data.get("amount_type", "fixed")   # fixed | percent
     amount_value = float(data.get("amount_value", 100))
-    mode = data.get("mode", "paper")
+    mode = data.get("mode", "live")
 
     if mode == "live" and (not api_key or not api_secret):
         return jsonify({"ok": False, "error": "API key and secret are required for live mode."}), 400

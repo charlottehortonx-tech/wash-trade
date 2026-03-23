@@ -131,14 +131,12 @@
       <span>Settings</span>
     </a>
   </nav>
-  <!-- Mode toggle in sidebar -->
+  <!-- Live mode indicator -->
   <div class="px-6 mb-4">
     <p class="text-[10px] font-bold text-outline uppercase tracking-widest mb-2">Trading Mode</p>
-    <div class="flex p-1 bg-surface-container-lowest rounded-lg border border-outline-variant/10">
-      <button id="btn-paper" onclick="setMode('paper')"
-        class="flex-1 py-2 text-[11px] font-bold rounded bg-primary text-on-primary transition-colors">PAPER</button>
-      <button id="btn-live" onclick="setMode('live')"
-        class="flex-1 py-2 text-[11px] font-bold text-outline transition-colors">LIVE</button>
+    <div class="flex items-center gap-2 px-3 py-2 bg-secondary-container/20 rounded-lg border border-secondary/30">
+      <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+      <span class="text-[11px] font-bold text-secondary tracking-widest">LIVE TRADING</span>
     </div>
   </div>
   <div class="px-6">
@@ -187,8 +185,8 @@
               <span class="material-symbols-outlined absolute right-3 top-2.5 text-outline text-lg cursor-pointer hover:text-on-surface select-none" onclick="toggleEye('api-key',this)">visibility</span>
             </div>
           </div>
-          <!-- API Secret (shown only in live mode) -->
-          <div id="api-secret-section" style="display:none">
+          <!-- API Secret -->
+          <div id="api-secret-section">
             <label class="block text-[10px] text-outline mb-1 uppercase font-bold">API Secret</label>
             <div class="relative">
               <input id="api-secret" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="password" placeholder="Paste your API secret"/>
@@ -293,7 +291,7 @@
         </div>
         <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10">
           <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Mode</p>
-          <p class="text-xl font-black tabular-nums text-on-surface" id="stat-mode">PAPER</p>
+          <p class="text-xl font-black tabular-nums text-secondary" id="stat-mode">LIVE</p>
           <div class="mt-2 text-[10px] text-outline" id="stat-started">Not started</div>
         </div>
       </div>
@@ -324,7 +322,7 @@
 
 <script>
   // ── State ────────────────────────────────────────────────────────────────
-  let mode = 'paper';
+  let mode = 'live';
   let amountType = 'fixed';
   let selectedToken = 'BTC/USDT';
   let delayVal = 30;

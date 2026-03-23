@@ -11,7 +11,7 @@ exchange:
   market_type: "spot"      # spot | futures
 
 # ── Mode ─────────────────────────────────────────────────────
-mode: "paper"              # paper | live
+mode: "live"               # paper | live
 
 # ── Strategy ─────────────────────────────────────────────────
 strategy:
