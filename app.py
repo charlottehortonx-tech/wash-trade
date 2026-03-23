@@ -33,11 +33,12 @@ _bot_status = {
     "config": {},
     "error": None,
 }
+_strategy_ref = None  # live reference to running Strategy instance
 
 
 def _run_bot(cfg: dict) -> None:
     """Target function for the bot background thread."""
-    global _bot_status
+    global _bot_status, _strategy_ref
     try:
         from exchange_client import build_client
         from execution import ExecutionEngine
@@ -54,12 +55,14 @@ def _run_bot(cfg: dict) -> None:
         risk = RiskManager(cfg, client)
         engine = ExecutionEngine(cfg, client)
         strat = Strategy(cfg, client, risk, engine)
+        _strategy_ref = strat
         strat.run_forever(stop_event=_stop_event)
 
     except Exception as exc:
         _bot_status["error"] = str(exc)
         logger.error("[App] Bot thread crashed", exc)
     finally:
+        _strategy_ref = None
         _bot_status["running"] = False
         _bot_status["started_at"] = None
 
@@ -173,6 +176,39 @@ def events():
     return jsonify(rows)
 
 
+@app.route("/update_config", methods=["POST"])
+def update_config():
+    """Update strategy settings on the running bot without restarting."""
+    global _bot_status
+    data = request.json or {}
+
+    delay = float(data.get("delay", 45))
+    profit_target = float(data.get("profit_target", 0.5))
+    limit_sell_offset = float(data.get("limit_sell_offset", 0.1))
+    amount_type = data.get("amount_type", "fixed")
+    amount_value = float(data.get("amount_value", 100))
+
+    if _strategy_ref is not None:
+        _strategy_ref.update_settings(
+            delay=delay,
+            profit_target=profit_target,
+            limit_sell_offset=limit_sell_offset,
+            amount_type=amount_type,
+            amount_value=amount_value,
+        )
+
+    _bot_status["config"].update({
+        "delay": delay,
+        "profit_target": profit_target,
+        "limit_sell_offset": limit_sell_offset,
+        "amount_type": amount_type,
+        "amount_value": amount_value,
+    })
+
+    return jsonify({"ok": True})
+
+
+
 @app.route("/force_buy", methods=["POST"])
 def force_buy():
     """Trigger an immediate market buy, bypassing the signal check."""
@@ -208,11 +244,9 @@ def force_buy():
             client = build_client(cfg)
             risk = RiskManager(cfg, client)
             engine = ExecutionEngine(cfg, client)
-
             symbol = cfg["exchange"]["symbol"]
-            book = client.get_order_book(symbol)
-
             strat = Strategy(cfg, client, risk, engine)
+            book = client.get_order_book(symbol)
             qty = strat._calc_qty(book.mid_price)
             signal = BuySignal(symbol=symbol, suggested_quantity_base=qty, source="force_buy")
             strat.run_trade_cycle(signal, book)

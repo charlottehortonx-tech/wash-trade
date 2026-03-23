@@ -54,6 +54,20 @@ class ExecutionEngine:
         self._profit_target: float = float(scfg.get("profit_target_pct", 0.5)) / 100.0
         self._limit_sell_offset: float = float(scfg.get("limit_sell_offset_pct", 0.1)) / 100.0
 
+    def update_settings(
+        self,
+        sell_delay: float,
+        profit_target_pct: float,
+        limit_sell_offset_pct: float,
+    ) -> None:
+        self._sell_delay = sell_delay
+        self._profit_target = profit_target_pct / 100.0
+        self._limit_sell_offset = limit_sell_offset_pct / 100.0
+        logger.info(
+            f"[Exec] Settings updated  sell_delay={sell_delay}s  "
+            f"profit_target={profit_target_pct}%  limit_sell_offset={limit_sell_offset_pct}%"
+        )
+
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _poll_until_filled(

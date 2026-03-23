@@ -169,6 +169,11 @@
       <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">bolt</span>
       FORCE BUY
     </button>
+    <button id="save-btn" onclick="saveSettings()"
+      class="flex-1 h-16 bg-surface-container text-on-surface rounded-lg font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all border border-outline-variant/30 group">
+      <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">save</span>
+      SAVE
+    </button>
   </section>
 
   <div class="grid grid-cols-12 gap-6">
@@ -460,11 +465,25 @@
     const r = await fetch('/force_buy', { method:'POST' });
     const d = await r.json();
     if (!d.ok) showToast(d.error || 'Force buy failed.');
-    else showToast('Force buy triggered — executing trade cycle.', 'info');
-    setTimeout(() => {
-      if (!btn.classList.contains('cursor-not-allowed')) return;
-      btn.classList.remove('opacity-40', 'cursor-not-allowed');
-    }, 3000);
+    else showToast('Force buy triggered.', 'info');
+    setTimeout(() => btn.classList.remove('opacity-40', 'cursor-not-allowed'), 3000);
+  }
+
+  async function saveSettings() {
+    const payload = {
+      delay:             delayVal,
+      profit_target:     profitTarget,
+      limit_sell_offset: limitSellOffset,
+      amount_type:       amountType,
+      amount_value:      parseFloat(document.getElementById('amount-value').value) || 100,
+    };
+    const btn = document.getElementById('save-btn');
+    btn.classList.add('opacity-40', 'cursor-not-allowed');
+    const r = await fetch('/update_config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const d = await r.json();
+    if (!d.ok) showToast(d.error || 'Failed to save settings.');
+    else showToast('Settings saved.', 'info');
+    setTimeout(() => btn.classList.remove('opacity-40', 'cursor-not-allowed'), 1500);
   }
 
   // ── Status Polling ────────────────────────────────────────────────────────
