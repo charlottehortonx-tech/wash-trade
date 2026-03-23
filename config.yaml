@@ -38,7 +38,7 @@ execution:
 risk:
   max_position_size_usd: 500.0     # max single trade size in quote currency
   max_daily_loss_usd: 200.0        # bot stops for the day if realized loss exceeds this
-  max_trades_per_hour: 10
+  max_trades_per_hour: 30
   consecutive_loss_cooldown_seconds: 300  # cooldown after 3 losses in a row
   consecutive_losses_threshold: 3
   min_balance_usd: 50.0            # refuse to trade below this balance

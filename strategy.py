@@ -82,12 +82,17 @@ class Strategy:
         amount_value: float,
         min_balance: float = 50.0,
         min_liquidity: float = 1000.0,
+        max_trades_per_hour: int = 30,
     ) -> None:
         self._amount_type = amount_type
         self._amount_value = amount_value
         self._amount_pct = amount_value / 100.0
         self._engine.update_settings(delay, profit_target, limit_sell_offset)
-        self._risk.update_settings(min_balance, min_liquidity, amount_value if amount_type == "fixed" else 999999)
+        self._risk.update_settings(
+            min_balance, min_liquidity,
+            amount_value if amount_type == "fixed" else 999999,
+            max_trades_per_hour=max_trades_per_hour,
+        )
         logger.info(
             f"[Strategy] Settings updated  amount_type={amount_type}  "
             f"amount_value={amount_value}  min_balance={min_balance}  min_liquidity={min_liquidity}"
