@@ -229,69 +229,45 @@
         <div class="space-y-3">
 
           <!-- Sell Delay -->
-          <div class="flex items-center gap-4">
-            <div class="flex-1 bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 flex items-center justify-between">
-              <span class="text-sm text-outline">Sell Delay</span>
-              <span class="text-lg font-black tabular-nums text-on-surface">
-                <span id="delay-display">45</span><span class="text-xs text-outline font-normal ml-1">sec</span>
-              </span>
-            </div>
-            <div class="flex flex-col gap-1">
-              <button onclick="adjustDelay(5)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
-                <span class="material-symbols-outlined">expand_less</span>
-              </button>
-              <button onclick="adjustDelay(-5)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
-                <span class="material-symbols-outlined">expand_more</span>
-              </button>
+          <div>
+            <label class="block text-[10px] text-outline mb-1 uppercase font-bold">Sell Delay</label>
+            <div class="relative">
+              <input id="delay-val" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-4 pr-14 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="45" min="1" placeholder="45"/>
+              <span class="absolute right-4 top-3.5 text-xs text-outline font-normal pointer-events-none">sec</span>
             </div>
           </div>
 
-          <!-- Profit Target — market sell threshold -->
-          <div class="flex items-center gap-4">
-            <div class="flex-1 bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 flex items-center justify-between">
-              <div>
-                <span class="text-sm text-outline">Market Sell if ≥</span>
-                <span class="text-[10px] text-outline/60 ml-1">(from entry)</span>
-              </div>
-              <span class="text-lg font-black tabular-nums text-secondary">
-                +<span id="profit-display">0.50</span><span class="text-xs text-outline font-normal ml-0.5">%</span>
-              </span>
-            </div>
-            <div class="flex flex-col gap-1">
-              <button onclick="adjustProfit(0.1)" class="p-1 bg-surface-container-highest rounded hover:text-secondary transition-colors">
-                <span class="material-symbols-outlined">expand_less</span>
-              </button>
-              <button onclick="adjustProfit(-0.1)" class="p-1 bg-surface-container-highest rounded hover:text-secondary transition-colors">
-                <span class="material-symbols-outlined">expand_more</span>
-              </button>
+          <!-- Profit Target -->
+          <div>
+            <label class="block text-[10px] text-outline mb-1 uppercase font-bold">Market Sell if ≥ <span class="text-outline/60 normal-case">(from entry)</span></label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">+</span>
+              <input id="profit-val" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-8 py-3 text-lg font-black tabular-nums text-secondary focus:ring-1 focus:ring-secondary focus:border-secondary transition-all outline-none" type="number" value="0.50" min="0.01" step="0.01" placeholder="0.50"/>
+              <span class="absolute right-4 top-3.5 text-xs text-outline font-normal pointer-events-none">%</span>
             </div>
           </div>
 
           <!-- Limit Sell Offset -->
-          <div class="flex items-center gap-4">
-            <div class="flex-1 bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 flex items-center justify-between">
-              <div>
-                <span class="text-sm text-outline">Limit Sell at</span>
-                <span class="text-[10px] text-outline/60 ml-1">(from entry)</span>
-              </div>
-              <span class="text-lg font-black tabular-nums text-primary">
-                +<span id="limit-sell-display">0.10</span><span class="text-xs text-outline font-normal ml-0.5">%</span>
-              </span>
-            </div>
-            <div class="flex flex-col gap-1">
-              <button onclick="adjustLimitSell(0.05)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
-                <span class="material-symbols-outlined">expand_less</span>
-              </button>
-              <button onclick="adjustLimitSell(-0.05)" class="p-1 bg-surface-container-highest rounded hover:text-primary transition-colors">
-                <span class="material-symbols-outlined">expand_more</span>
-              </button>
+          <div>
+            <label class="block text-[10px] text-outline mb-1 uppercase font-bold">Limit Sell at <span class="text-outline/60 normal-case">(from entry)</span></label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">+</span>
+              <input id="limit-sell-val" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-8 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="0.10" min="0.01" step="0.01" placeholder="0.10"/>
+              <span class="absolute right-4 top-3.5 text-xs text-outline font-normal pointer-events-none">%</span>
             </div>
           </div>
 
         </div>
-        <input type="hidden" id="delay-val" value="45"/>
-        <input type="hidden" id="profit-val" value="0.5"/>
-        <input type="hidden" id="limit-sell-val" value="0.1"/>
+      </div>
+
+      <!-- Min Balance -->
+      <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Min Balance</h3>
+        <div class="relative">
+          <span class="absolute left-4 top-3 text-outline text-sm pointer-events-none">$</span>
+          <input id="min-balance" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-4 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="50" min="0" step="0.01" placeholder="50"/>
+        </div>
+        <p class="mt-2 text-[10px] text-outline">Bot refuses to trade when balance drops below this amount.</p>
       </div>
 
       <!-- Allocation -->
@@ -374,9 +350,6 @@
   let mode = 'live';
   let amountType = 'fixed';
   let selectedToken = 'BTC/USDT';
-  let delayVal = 45;
-  let profitTarget = 0.50;
-  let limitSellOffset = 0.10;
   let tradeCount = 0;
 
   // ── Mode ─────────────────────────────────────────────────────────────────
@@ -405,27 +378,6 @@
       b.querySelector('.material-symbols-outlined').textContent = active ? 'check_circle' : 'radio_button_unchecked';
       b.querySelector('.material-symbols-outlined').style.fontVariationSettings = active ? "'FILL' 1" : "'FILL' 0";
     });
-  }
-
-  // ── Delay ─────────────────────────────────────────────────────────────────
-  function adjustDelay(delta) {
-    delayVal = Math.max(1, delayVal + delta);
-    document.getElementById('delay-display').textContent = delayVal;
-    document.getElementById('delay-val').value = delayVal;
-  }
-
-  // ── Profit Target ─────────────────────────────────────────────────────────
-  function adjustProfit(delta) {
-    profitTarget = Math.max(0.1, Math.round((profitTarget + delta) * 100) / 100);
-    document.getElementById('profit-display').textContent = profitTarget.toFixed(2);
-    document.getElementById('profit-val').value = profitTarget;
-  }
-
-  // ── Limit Sell Offset ─────────────────────────────────────────────────────
-  function adjustLimitSell(delta) {
-    limitSellOffset = Math.max(0.01, Math.round((limitSellOffset + delta) * 100) / 100);
-    document.getElementById('limit-sell-display').textContent = limitSellOffset.toFixed(2);
-    document.getElementById('limit-sell-val').value = limitSellOffset;
   }
 
   // ── Amount Type ───────────────────────────────────────────────────────────
@@ -470,9 +422,10 @@
       api_key:           document.getElementById('api-key').value.trim(),
       api_secret:        document.getElementById('api-secret').value.trim(),
       token:             selectedToken,
-      delay:             delayVal,
-      profit_target:     profitTarget,
-      limit_sell_offset: limitSellOffset,
+      delay:             parseInt(document.getElementById('delay-val').value) || 45,
+      profit_target:     parseFloat(document.getElementById('profit-val').value) || 0.5,
+      limit_sell_offset: parseFloat(document.getElementById('limit-sell-val').value) || 0.1,
+      min_balance:       parseFloat(document.getElementById('min-balance').value) || 0,
       amount_type:       amountType,
       amount_value:      parseFloat(document.getElementById('amount-value').value) || 100,
     };

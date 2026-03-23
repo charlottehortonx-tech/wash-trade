@@ -96,6 +96,7 @@ def start():
     limit_sell_offset = float(data.get("limit_sell_offset", 0.1))
     amount_type = data.get("amount_type", "fixed")   # fixed | percent
     amount_value = float(data.get("amount_value", 100))
+    min_balance = float(data.get("min_balance", 50))
     mode = data.get("mode", "live")
 
     if mode == "live" and (not api_key or not api_secret):
@@ -126,6 +127,7 @@ def start():
     else:
         cfg["_ui"]["percent"] = amount_value / 100.0
 
+    cfg["risk"]["min_balance_usd"] = min_balance
     cfg["logging"]["level"] = "INFO"
 
     _stop_event.clear()
@@ -138,6 +140,7 @@ def start():
             "delay": delay,
             "profit_target": profit_target,
             "limit_sell_offset": limit_sell_offset,
+            "min_balance": min_balance,
             "amount_type": amount_type,
             "amount_value": amount_value,
             "mode": mode,
