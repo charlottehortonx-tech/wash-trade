@@ -241,6 +241,7 @@ class BinanceTHExchangeClient(ExchangeClient):
         ex_cfg = cfg.get("exchange", {})
         self._symbol = ex_cfg.get("symbol", "BTC/THB")
         self._qty_step: float = float(ex_cfg.get("qty_step", 0.00001))
+        self._price_step: float = float(ex_cfg.get("price_step", 0.01))
         fee_cfg = cfg.get("fees", {})
         self._taker_fee = float(fee_cfg.get("taker_pct", 0.25)) / 100.0
         self._maker_fee = float(fee_cfg.get("maker_pct", 0.25)) / 100.0
@@ -345,9 +346,17 @@ class BinanceTHExchangeClient(ExchangeClient):
         steps = math.floor(round(quantity / self._qty_step, 8))
         return round(steps * self._qty_step, 10)
 
+    def _round_price(self, price: float) -> float:
+        """Round price to the exchange PRICE_FILTER tick size."""
+        import math
+        ticks = math.floor(round(price / self._price_step, 8))
+        return round(ticks * self._price_step, 10)
+
     def place_order(self, symbol: str, side: str, order_type: str,
                     quantity: float, price: Optional[float] = None) -> Order:
         quantity = self._round_qty(quantity)
+        if price is not None:
+            price = self._round_price(price)
         params: dict = {
             "symbol": self._to_exchange_symbol(symbol),
             "side": side.upper(),
