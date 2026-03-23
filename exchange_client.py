@@ -342,7 +342,7 @@ class BinanceTHExchangeClient(ExchangeClient):
     def _round_qty(self, quantity: float) -> float:
         """Floor quantity to the exchange LOT_SIZE step to avoid precision errors."""
         import math
-        steps = math.floor(quantity / self._qty_step)
+        steps = math.floor(round(quantity / self._qty_step, 8))
         return round(steps * self._qty_step, 10)
 
     def place_order(self, symbol: str, side: str, order_type: str,
