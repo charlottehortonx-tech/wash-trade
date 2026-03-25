@@ -103,6 +103,7 @@ def start():
     min_balance = float(data.get("min_balance", 50))
     min_liquidity = float(data.get("min_liquidity", 1000))
     max_trades_per_hour = int(data.get("max_trades_per_hour", 30))
+    strategy_mode = data.get("strategy_mode", "signal")
     mode = data.get("mode", "live")
 
     if mode == "live" and (not api_key or not api_secret):
@@ -137,6 +138,7 @@ def start():
     cfg["risk"]["min_balance_usd"] = min_balance
     cfg["risk"]["min_order_book_depth_usd"] = min_liquidity
     cfg["risk"]["max_trades_per_hour"] = max_trades_per_hour
+    cfg["strategy"]["strategy_mode"] = strategy_mode
     cfg["logging"]["level"] = "INFO"
 
     _stop_event.clear()
@@ -152,6 +154,7 @@ def start():
             "min_balance": min_balance,
             "min_liquidity": min_liquidity,
             "max_trades_per_hour": max_trades_per_hour,
+            "strategy_mode": strategy_mode,
             "amount_type": amount_type,
             "amount_value": amount_value,
             "mode": mode,
@@ -198,6 +201,7 @@ def update_config():
     min_balance = float(data.get("min_balance", 50))
     min_liquidity = float(data.get("min_liquidity", 1000))
     max_trades_per_hour = int(data.get("max_trades_per_hour", 30))
+    strategy_mode = data.get("strategy_mode", "signal")
 
     if _strategy_ref is not None:
         _strategy_ref.update_settings(
@@ -209,6 +213,7 @@ def update_config():
             min_balance=min_balance,
             min_liquidity=min_liquidity,
             max_trades_per_hour=max_trades_per_hour,
+            strategy_mode=strategy_mode,
         )
 
     _bot_status["config"].update({
@@ -220,6 +225,7 @@ def update_config():
         "min_balance": min_balance,
         "min_liquidity": min_liquidity,
         "max_trades_per_hour": max_trades_per_hour,
+        "strategy_mode": strategy_mode,
     })
 
     return jsonify({"ok": True})
