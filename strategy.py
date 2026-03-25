@@ -68,6 +68,7 @@ class Strategy:
         self._poll_interval: float = float(
             cfg.get("strategy", {}).get("signal_poll_interval_seconds", 5)
         )
+        self._strategy_mode: str = cfg.get("strategy", {}).get("strategy_mode", "signal")
         ui_cfg = cfg.get("_ui", {})
         self._amount_type: str = ui_cfg.get("amount_type", "fixed")
         self._amount_value: float = float(ui_cfg.get("amount_value", 100.0))
@@ -83,10 +84,12 @@ class Strategy:
         min_balance: float = 50.0,
         min_liquidity: float = 1000.0,
         max_trades_per_hour: int = 30,
+        strategy_mode: str = "signal",
     ) -> None:
         self._amount_type = amount_type
         self._amount_value = amount_value
         self._amount_pct = amount_value / 100.0
+        self._strategy_mode = strategy_mode
         self._engine.update_settings(delay, profit_target, limit_sell_offset)
         self._risk.update_settings(
             min_balance, min_liquidity,
@@ -94,7 +97,7 @@ class Strategy:
             max_trades_per_hour=max_trades_per_hour,
         )
         logger.info(
-            f"[Strategy] Settings updated  amount_type={amount_type}  "
+            f"[Strategy] Settings updated  mode={strategy_mode}  amount_type={amount_type}  "
             f"amount_value={amount_value}  min_balance={min_balance}  min_liquidity={min_liquidity}"
         )
 
@@ -203,12 +206,15 @@ class Strategy:
 
     def run_forever(self, stop_event=None) -> None:
         """
-        Poll for signals and execute trade cycles until interrupted
-        or stop_event is set (threading.Event).
+        Run trade cycles until interrupted or stop_event is set.
+
+        signal mode: poll get_buy_signal() every poll_interval seconds; only buy on a signal.
+        timer  mode: buy immediately on each cycle with no signal gating; sell after delay,
+                     then repeat — cycle time ≈ sell_delay_seconds.
         """
         logger.info(
-            f"[Strategy] Starting signal loop  symbol={self._symbol}  "
-            f"poll={self._poll_interval}s"
+            f"[Strategy] Starting  symbol={self._symbol}  "
+            f"strategy_mode={self._strategy_mode}"
         )
         while True:
             if stop_event is not None and stop_event.is_set():
@@ -216,6 +222,24 @@ class Strategy:
                 break
             try:
                 book = self._client.get_order_book(self._symbol)
+
+                if self._strategy_mode == "timer":
+                    # Timer mode: fire unconditionally every cycle
+                    qty = self._calc_qty(book.mid_price)
+                    signal = BuySignal(
+                        symbol=self._symbol,
+                        suggested_quantity_base=qty,
+                        source="timer",
+                    )
+                    logger.info(
+                        f"[Strategy] Timer cycle started  qty={qty}"
+                    )
+                    self.run_trade_cycle(signal, book)
+                    # No inter-cycle sleep — sell_delay already controls hold time.
+                    # Skip the sleep at the bottom of the loop.
+                    continue
+
+                # Signal mode (default)
                 signal = get_buy_signal(self._symbol, book)
                 if signal:
                     signal.suggested_quantity_base = self._calc_qty(book.mid_price)
@@ -225,6 +249,7 @@ class Strategy:
                     self.run_trade_cycle(signal, book)
                 else:
                     logger.debug("[Strategy] No signal this tick.")
+
             except KeyboardInterrupt:
                 logger.info("[Strategy] KeyboardInterrupt — shutting down.")
                 break
