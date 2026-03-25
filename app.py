@@ -232,6 +232,26 @@ def update_config():
 
 
 
+@app.route("/trades")
+def trades():
+    """Return all trade_completed events from the event log, newest first."""
+    import json as _json
+    rows = []
+    try:
+        with open(EVENT_LOG) as fh:
+            for line in fh:
+                try:
+                    ev = _json.loads(line)
+                    if ev.get("event") == "trade_completed":
+                        rows.append(ev)
+                except Exception:
+                    pass
+    except FileNotFoundError:
+        pass
+    rows.reverse()
+    return jsonify(rows)
+
+
 @app.route("/export/csv")
 def export_csv():
     """Download all events as a CSV file."""
