@@ -118,13 +118,13 @@
     </div>
   </div>
   <nav class="flex-1 space-y-1 px-4">
-    <a class="flex items-center gap-3 px-4 py-3 rounded text-blue-400 bg-[#201f1f] border-r-2 border-blue-500 transition-all" href="#">
+    <a id="nav-dashboard" onclick="showPage('dashboard')" class="flex items-center gap-3 px-4 py-3 rounded text-blue-400 bg-[#201f1f] border-r-2 border-blue-500 transition-all cursor-pointer">
       <span class="material-symbols-outlined">dashboard</span>
       <span>Dashboard</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 rounded text-slate-500 hover:text-slate-200 hover:bg-[#201f1f] transition-all" href="#">
-      <span class="material-symbols-outlined">terminal</span>
-      <span>Logs</span>
+    <a id="nav-activity" onclick="showPage('activity')" class="flex items-center gap-3 px-4 py-3 rounded text-slate-500 hover:text-slate-200 hover:bg-[#201f1f] transition-all cursor-pointer">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span>Trade Activity</span>
     </a>
     <a class="flex items-center gap-3 px-4 py-3 rounded text-slate-500 hover:text-slate-200 hover:bg-[#201f1f] transition-all" href="#">
       <span class="material-symbols-outlined">settings</span>
@@ -262,6 +262,9 @@
             </div>
           </div>
 
+          <!-- Profit Target + Limit Sell (hidden in timer mode) -->
+          <div id="signal-sell-fields">
+
           <!-- Profit Target -->
           <div>
             <label class="block text-[10px] text-outline mb-1 uppercase font-bold">Market Sell if ≥ <span class="text-outline/60 normal-case">(from entry)</span></label>
@@ -280,6 +283,8 @@
               <input id="limit-sell-val" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded pl-8 pr-8 py-3 text-lg font-black tabular-nums focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none" type="number" value="0.10" min="0.01" step="0.01" placeholder="0.10"/>
               <span class="absolute right-4 top-3.5 text-xs text-outline font-normal pointer-events-none">%</span>
             </div>
+          </div>
+
           </div>
 
         </div>
@@ -360,9 +365,9 @@
           </div>
         </div>
         <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10">
-          <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Mode</p>
-          <p class="text-xl font-black tabular-nums text-secondary" id="stat-mode">LIVE</p>
-          <div class="mt-2 text-[10px] text-outline" id="stat-started">Not started</div>
+          <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Total PnL</p>
+          <p class="text-xl font-black tabular-nums" id="stat-pnl">$0.00</p>
+          <div class="mt-2 text-[10px] text-outline" id="stat-mode">LIVE</div>
         </div>
       </div>
 
@@ -411,6 +416,53 @@
 
     </div>
   </div>
+
+  <!-- ── Trade Activity Page ──────────────────────────────────────────────── -->
+  <div id="page-activity" style="display:none">
+
+    <!-- Summary cards -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10">
+        <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Total Trades</p>
+        <p class="text-2xl font-black tabular-nums text-secondary" id="ta-total">0</p>
+      </div>
+      <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10">
+        <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Total PnL</p>
+        <p class="text-2xl font-black tabular-nums" id="ta-pnl">$0.00</p>
+      </div>
+      <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10">
+        <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Win Rate</p>
+        <p class="text-2xl font-black tabular-nums text-primary" id="ta-winrate">—</p>
+      </div>
+      <div class="p-5 bg-surface-container rounded-xl border border-outline-variant/10">
+        <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">Avg PnL / Trade</p>
+        <p class="text-2xl font-black tabular-nums" id="ta-avg">$0.00</p>
+      </div>
+    </div>
+
+    <!-- Trade table -->
+    <div class="bg-surface-container-low rounded-xl border border-outline-variant/10 overflow-hidden">
+      <div class="p-5 border-b border-outline-variant/10 flex justify-between items-center">
+        <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Trade History</h3>
+        <span class="text-[10px] text-outline" id="ta-count"></span>
+      </div>
+      <!-- Header row -->
+      <div class="grid grid-cols-7 px-5 py-2 text-[10px] font-bold text-outline uppercase tracking-wider border-b border-outline-variant/10 bg-surface-container">
+        <span>Time</span>
+        <span>Symbol</span>
+        <span class="text-right">Buy Price</span>
+        <span class="text-right">Sell Price</span>
+        <span class="text-right">Qty</span>
+        <span class="text-right">Fees</span>
+        <span class="text-right">PnL</span>
+      </div>
+      <div id="ta-rows" class="overflow-y-auto font-mono text-[11px]" style="max-height:520px">
+        <div class="px-5 py-8 text-outline/50 text-center">No trades yet.</div>
+      </div>
+    </div>
+
+  </div>
+
 </main>
 
 <!-- Ambient overlay -->
@@ -456,6 +508,7 @@
     document.getElementById('delay-label').textContent = isTimer
       ? 'Hold Time (buy → sell)'
       : 'Sell Delay';
+    document.getElementById('signal-sell-fields').style.display = isTimer ? 'none' : '';
   }
 
   // ── Token ─────────────────────────────────────────────────────────────────
@@ -592,12 +645,6 @@
     if (data.config && data.config.mode) {
       document.getElementById('stat-mode').textContent = data.config.mode.toUpperCase();
     }
-    if (data.started_at) {
-      const d = new Date(data.started_at);
-      document.getElementById('stat-started').textContent = 'Since ' + d.toLocaleTimeString();
-    } else {
-      document.getElementById('stat-started').textContent = running ? 'Running' : 'Not started';
-    }
 
     if (data.error) { showToast(data.error); document.getElementById('notif-dot').style.display = 'block'; }
   }
@@ -662,11 +709,107 @@
     } catch(_) {}
   }
 
+  // ── Page Navigation ───────────────────────────────────────────────────────
+  let currentPage = 'dashboard';
+
+  function showPage(page) {
+    currentPage = page;
+    const isDash = page === 'dashboard';
+
+    // Main dashboard grid
+    document.querySelector('.grid.grid-cols-12').style.display = isDash ? '' : 'none';
+    // Header buttons
+    document.querySelector('section.mb-8').style.display = isDash ? '' : 'none';
+    // Activity page
+    document.getElementById('page-activity').style.display = isDash ? 'none' : '';
+
+    // Nav highlight
+    const navDash = document.getElementById('nav-dashboard');
+    const navAct  = document.getElementById('nav-activity');
+    navDash.className = isDash
+      ? 'flex items-center gap-3 px-4 py-3 rounded text-blue-400 bg-[#201f1f] border-r-2 border-blue-500 transition-all cursor-pointer'
+      : 'flex items-center gap-3 px-4 py-3 rounded text-slate-500 hover:text-slate-200 hover:bg-[#201f1f] transition-all cursor-pointer';
+    navAct.className = !isDash
+      ? 'flex items-center gap-3 px-4 py-3 rounded text-blue-400 bg-[#201f1f] border-r-2 border-blue-500 transition-all cursor-pointer'
+      : 'flex items-center gap-3 px-4 py-3 rounded text-slate-500 hover:text-slate-200 hover:bg-[#201f1f] transition-all cursor-pointer';
+
+    if (!isDash) pollTrades();
+  }
+
+  // ── Trade Activity ────────────────────────────────────────────────────────
+  let lastTradeCount = 0;
+
+  function fmtMoney(v) {
+    const sign = v >= 0 ? '+' : '';
+    return sign + '$' + Math.abs(v).toFixed(4);
+  }
+
+  function pnlClass(v) {
+    return v >= 0 ? 'text-secondary font-bold' : 'text-error font-bold';
+  }
+
+  async function pollTrades() {
+    try {
+      const r = await fetch('/trades');
+      const trades = await r.json();
+
+      // Update dashboard PnL stat
+      const totalPnl = trades.reduce((s, t) => s + (t.realized_pnl || 0), 0);
+      const pnlEl = document.getElementById('stat-pnl');
+      pnlEl.textContent = fmtMoney(totalPnl);
+      pnlEl.className = 'text-xl font-black tabular-nums ' + (totalPnl >= 0 ? 'text-secondary' : 'text-error');
+
+      if (currentPage !== 'activity') return;
+      if (trades.length === lastTradeCount) return;
+      lastTradeCount = trades.length;
+
+      // Summary cards
+      document.getElementById('ta-total').textContent = trades.length;
+      document.getElementById('ta-count').textContent = trades.length + ' trades';
+
+      const pnlEl2 = document.getElementById('ta-pnl');
+      pnlEl2.textContent = fmtMoney(totalPnl);
+      pnlEl2.className = 'text-2xl font-black tabular-nums ' + (totalPnl >= 0 ? 'text-secondary' : 'text-error');
+
+      const wins = trades.filter(t => t.realized_pnl >= 0).length;
+      const winRate = trades.length ? Math.round(wins / trades.length * 100) : null;
+      document.getElementById('ta-winrate').textContent = winRate !== null ? winRate + '%' : '—';
+
+      const avg = trades.length ? totalPnl / trades.length : 0;
+      const avgEl = document.getElementById('ta-avg');
+      avgEl.textContent = fmtMoney(avg);
+      avgEl.className = 'text-2xl font-black tabular-nums ' + (avg >= 0 ? 'text-secondary' : 'text-error');
+
+      // Rows
+      if (trades.length === 0) {
+        document.getElementById('ta-rows').innerHTML = '<div class="px-5 py-8 text-outline/50 text-center">No trades yet.</div>';
+        return;
+      }
+      document.getElementById('ta-rows').innerHTML = trades.map(t => {
+        const ts = t.ts ? new Date(t.ts).toLocaleString('en-GB', { hour12: false }) : '—';
+        const pnl = t.realized_pnl || 0;
+        const fees = ((t.buy_fee || 0) + (t.sell_fee || 0)).toFixed(4);
+        const rowBg = pnl >= 0 ? 'hover:bg-secondary/5' : 'hover:bg-error/5';
+        return `<div class="grid grid-cols-7 px-5 py-3 border-b border-outline-variant/5 transition-colors ${rowBg}">
+          <span class="text-outline/70 tabular-nums">${ts}</span>
+          <span class="text-on-surface-variant">${t.symbol || '—'}</span>
+          <span class="text-right tabular-nums text-on-surface-variant">$${Number(t.buy_price || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+          <span class="text-right tabular-nums text-on-surface-variant">$${Number(t.sell_price || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+          <span class="text-right tabular-nums text-on-surface-variant">${Number(t.qty || 0).toFixed(6)}</span>
+          <span class="text-right tabular-nums text-outline">$${fees}</span>
+          <span class="text-right tabular-nums ${pnlClass(pnl)}">${fmtMoney(pnl)}</span>
+        </div>`;
+      }).join('');
+    } catch(_) {}
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
   pollStatus();
   pollEvents();
+  pollTrades();
   setInterval(pollStatus, 3000);
   setInterval(pollEvents, 10000);
+  setInterval(pollTrades, 10000);
 </script>
 </body>
 </html>
