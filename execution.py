@@ -80,9 +80,7 @@ class ExecutionEngine:
         Returns the latest Order state.
         """
         # Short-circuit: exchange may return a terminal status from place_order itself.
-        # Exception: if filled but avg_fill_price is 0.0, fall through to re-poll so
-        # the exchange has time to populate the fill price (BinanceTH timing issue).
-        if order.status in ("filled", "cancelled") and order.avg_fill_price > 0.0:
+        if order.status in ("filled", "cancelled"):
             return order
 
         deadline = time.time() + timeout
@@ -134,10 +132,15 @@ class ExecutionEngine:
             logger.error("Failed to place BUY order", exc)
             return None
 
-    def wait_for_buy_fill(self, order: Order) -> Optional[Position]:
+    def wait_for_buy_fill(
+        self, order: Order, fallback_price: float = 0.0
+    ) -> Optional[Position]:
         """
         Wait for the buy order to fill fully.
         Returns a Position on success, None on timeout/cancel.
+
+        fallback_price: used as avg_buy_price when the exchange returns 0.0
+        (BinanceTH market orders never populate cummulativeQuoteQty via get_order).
         """
         order = self._poll_until_filled(order, timeout=self._fill_timeout)
         if order.status != "filled" and order.filled_qty == 0:
@@ -146,27 +149,21 @@ class ExecutionEngine:
             )
             return None
 
-        # BinanceTH sometimes returns cummulativeQuoteQty=0 even on a filled poll.
-        # Retry up to 5 times with short delays to get the real avg fill price.
-        for _attempt in range(5):
-            if order.avg_fill_price != 0.0 or order.filled_qty == 0:
-                break
-            time.sleep(1)
-            try:
-                order = self._client.get_order(order.order_id, order.symbol)
-                logger.info(
-                    f"[Exec] Re-fetched buy fill price  "
-                    f"avg={order.avg_fill_price}  qty={order.filled_qty}"
-                )
-            except Exception as exc:
-                logger.error("Failed to re-fetch buy order fill price", exc)
-                break
+        # BinanceTH never returns avg fill price via get_order for market orders.
+        # Use the order book mid at signal time as a best-effort fill price.
+        avg_price = order.avg_fill_price
+        if avg_price == 0.0 and fallback_price > 0.0:
+            avg_price = fallback_price
+            logger.warning(
+                f"[Exec] avg_fill_price=0.0 from exchange — using fallback "
+                f"price {fallback_price:.4f} for position tracking"
+            )
 
         # Partial fill: treat filled portion as the position
         pos = Position(
             symbol=self._symbol,
             filled_qty=order.filled_qty,
-            avg_buy_price=order.avg_fill_price,
+            avg_buy_price=avg_price,
             buy_fee=order.fee,
             buy_order_id=order.order_id,
             fill_timestamp=time.time(),

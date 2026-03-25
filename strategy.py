@@ -150,7 +150,9 @@ class Strategy:
             return False
 
         # ── 3. Wait for fill ──────────────────────────────────────────────────
-        position: Optional[Position] = self._engine.wait_for_buy_fill(buy_order)
+        position: Optional[Position] = self._engine.wait_for_buy_fill(
+            buy_order, fallback_price=mid
+        )
         if position is None or position.filled_qty <= 0:
             logger.error("[Strategy] Buy not filled — aborting cycle.")
             self._risk.set_position_closed(realized_pnl=0.0)
