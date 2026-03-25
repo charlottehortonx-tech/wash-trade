@@ -164,16 +164,6 @@
       <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">stop</span>
       STOP BOT
     </button>
-    <button id="force-buy-btn" onclick="forceBuy()"
-      class="flex-1 h-16 bg-primary/10 text-primary rounded-lg font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all border border-primary/30 group opacity-40 cursor-not-allowed">
-      <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">bolt</span>
-      FORCE BUY
-    </button>
-    <button id="save-btn" onclick="saveSettings()"
-      class="flex-1 h-16 bg-surface-container text-on-surface rounded-lg font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all border border-outline-variant/30 group">
-      <span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings:'FILL' 1">save</span>
-      SAVE
-    </button>
   </section>
 
   <div class="grid grid-cols-12 gap-6">
@@ -527,37 +517,6 @@
     pollStatus();
   }
 
-  async function forceBuy() {
-    const btn = document.getElementById('force-buy-btn');
-    if (btn.classList.contains('cursor-not-allowed')) return;
-    btn.classList.add('opacity-40', 'cursor-not-allowed');
-    const r = await fetch('/force_buy', { method:'POST' });
-    const d = await r.json();
-    if (!d.ok) showToast(d.error || 'Force buy failed.');
-    else showToast('Force buy triggered.', 'info');
-    setTimeout(() => btn.classList.remove('opacity-40', 'cursor-not-allowed'), 3000);
-  }
-
-  async function saveSettings() {
-    const payload = {
-      delay:             parseInt(document.getElementById('delay-val').value) || 45,
-      profit_target:     parseFloat(document.getElementById('profit-val').value) || 0.5,
-      limit_sell_offset: parseFloat(document.getElementById('limit-sell-val').value) || 0.1,
-      amount_type:       amountType,
-      amount_value:         parseFloat(document.getElementById('amount-value').value) || 100,
-      min_balance:          parseFloat(document.getElementById('min-balance').value) || 0,
-      min_liquidity:        parseFloat(document.getElementById('min-liquidity').value) || 1000,
-      max_trades_per_hour:  parseInt(document.getElementById('max-trades-per-hour').value) || 30,
-    };
-    const btn = document.getElementById('save-btn');
-    btn.classList.add('opacity-40', 'cursor-not-allowed');
-    const r = await fetch('/update_config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-    const d = await r.json();
-    if (!d.ok) showToast(d.error || 'Failed to save settings.');
-    else showToast('Settings saved.', 'info');
-    setTimeout(() => btn.classList.remove('opacity-40', 'cursor-not-allowed'), 1500);
-  }
-
   // ── Status Polling ────────────────────────────────────────────────────────
   function applyStatus(data) {
     const running = data.running;
@@ -582,18 +541,15 @@
       ? 'w-2 h-2 rounded-full bg-secondary animate-pulse'
       : 'w-2 h-2 rounded-full bg-outline';
 
-    // Start/Stop/ForceBuy buttons
-    const startBtn    = document.getElementById('start-btn');
-    const stopBtn     = document.getElementById('stop-btn');
-    const forceBuyBtn = document.getElementById('force-buy-btn');
+    // Start/Stop buttons
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn  = document.getElementById('stop-btn');
     if (running) {
       startBtn.classList.add('opacity-40','cursor-not-allowed');
       stopBtn.classList.remove('opacity-40','cursor-not-allowed');
-      forceBuyBtn.classList.remove('opacity-40','cursor-not-allowed');
     } else {
       startBtn.classList.remove('opacity-40','cursor-not-allowed');
       stopBtn.classList.add('opacity-40','cursor-not-allowed');
-      forceBuyBtn.classList.add('opacity-40','cursor-not-allowed');
     }
 
     // Stats
