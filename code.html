@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Obsidian Architect | High-Precision Trading</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed-variant": "#2b418f",
+                        "primary-container": "#0052ff",
+                        "on-surface-variant": "#c3c5d9",
+                        "on-tertiary-fixed": "#3c0800",
+                        "on-primary-fixed": "#001452",
+                        "tertiary-fixed-dim": "#ffb4a1",
+                        "on-primary-container": "#dfe3ff",
+                        "tertiary-container": "#bf3003",
+                        "surface-container-high": "#2a2a2a",
+                        "background": "#131313",
+                        "on-primary-fixed-variant": "#0038b6",
+                        "surface-container": "#201f1f",
+                        "on-secondary-fixed": "#001452",
+                        "on-secondary-container": "#9fb1ff",
+                        "on-secondary": "#0e2977",
+                        "inverse-surface": "#e5e2e1",
+                        "primary": "#b7c4ff",
+                        "surface-variant": "#353534",
+                        "tertiary": "#ffb4a1",
+                        "on-tertiary-fixed-variant": "#891e00",
+                        "surface-container-lowest": "#0e0e0e",
+                        "secondary-fixed-dim": "#b7c4ff",
+                        "primary-fixed-dim": "#b7c4ff",
+                        "surface-tint": "#b7c4ff",
+                        "error-container": "#93000a",
+                        "secondary-fixed": "#dde1ff",
+                        "on-primary": "#002682",
+                        "outline-variant": "#434656",
+                        "surface-container-low": "#1c1b1b",
+                        "on-error-container": "#ffdad6",
+                        "secondary": "#b7c4ff",
+                        "surface": "#131313",
+                        "on-surface": "#e5e2e1",
+                        "error": "#ffb4ab",
+                        "on-error": "#690005",
+                        "inverse-on-surface": "#313030",
+                        "inverse-primary": "#004ced",
+                        "surface-dim": "#131313",
+                        "surface-bright": "#393939",
+                        "on-tertiary-container": "#ffddd5",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary": "#611300",
+                        "primary-fixed": "#dde1ff",
+                        "outline": "#8d90a2",
+                        "tertiary-fixed": "#ffdbd2",
+                        "secondary-container": "#2b418f",
+                        "on-background": "#e5e2e1"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #131313;
+        }
+        .headline-font { font-family: 'Manrope', sans-serif; }
+        .glass-panel {
+            background: rgba(42, 42, 42, 0.6);
+            backdrop-filter: blur(24px);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #434656; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Side Navigation Shell -->
+<aside class="fixed left-0 top-0 h-screen flex flex-col border-r border-outline-variant/15 bg-[#1c1b1b] w-64 z-50">
+<div class="p-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">fluid</span>
+</div>
+<div>
+<h1 class="text-lg font-black text-[#b7c4ff] headline-font leading-tight">Obsidian</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-medium">High-Precision Trading</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-2 mt-4">
+<a class="flex items-center gap-3 px-4 py-3 bg-[#2a2a2a] text-[#b7c4ff] font-semibold border-l-4 border-[#b7c4ff] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c3c5d9] opacity-70 hover:opacity-100 hover:bg-[#2a2a2a] hover:text-[#b7c4ff] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span class="text-sm">Logs</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c3c5d9] opacity-70 hover:opacity-100 hover:bg-[#2a2a2a] hover:text-[#b7c4ff] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm">Settings</span>
+</a>
+</nav>
+<div class="p-4 mt-auto space-y-2">
+<button class="w-full py-3 px-4 bg-surface-container-high border border-outline-variant/20 text-primary text-xs font-bold rounded hover:bg-surface-container-highest transition-all uppercase tracking-widest">
+                Upgrade Plan
+            </button>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c3c5d9] opacity-70 hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="help">help</span>
+<span class="text-xs">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c3c5d9] opacity-70 hover:opacity-100 transition-all" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="logout">logout</span>
+<span class="text-xs">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-40 flex justify-between items-center w-full px-8 py-4 bg-[#131313] border-b border-outline-variant/15">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tight text-[#b7c4ff] headline-font">Obsidian Architect</span>
+<div class="hidden md:flex items-center gap-6">
+<span class="text-xs font-medium text-[#b7c4ff] border-b-2 border-[#b7c4ff] pb-1 font-body">$42,284.12 BTC</span>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(183,196,255,0.6)]"></span>
+<span class="text-xs font-medium text-[#c3c5d9]">Status: Active</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-lg border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="text-xs font-mono text-on-surface">0x71C...4f2E</span>
+</div>
+<button class="p-2 hover:bg-[#2a2a2a] rounded-full transition-all text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/30">
+<img alt="User Profile Avatar" data-alt="minimalist portrait of a professional trader in low key lighting with dark aesthetic background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAQrqfvpNhXNRCuekUEy3DAix36Y86d9Oyq-pb00UpR_O49_LfJW1JdKBaFMR1DNzNlOtZKT08-R_sr8FTgfR9bvg5_82H5Fl5ziiwmS2X1lpoiFDIdasMLN71eJmOibnV6h1pEq7iZrYXWN0VYic_K0mJh93RfVLKrceu3Z_dxB8c1llNR220yNy2MQi-hwl5rAbL6RUnSY8h7a2lXUV91CsV-FxM7dmjZfCcwC5EmyRW7H9Sv_w8v0h0xiP-Q_th7tssFX0-RQBl"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-8 max-w-[1600px] w-full mx-auto space-y-8">
+<!-- Top Row: KPIs & Bot Control -->
+<div class="grid grid-cols-12 gap-6">
+<!-- KPI Cards Bento -->
+<div class="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Open Position -->
+<div class="bg-surface-container-low p-6 rounded-xl border-l border-primary/20">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-semibold">Open Position</p>
+<div class="flex items-end gap-2">
+<h3 class="text-2xl font-bold headline-font text-on-surface">0.428 BTC</h3>
+<span class="text-xs text-primary mb-1">Long</span>
+</div>
+<div class="mt-4 h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-2/3"></div>
+</div>
+</div>
+<!-- Realized PnL -->
+<div class="bg-surface-container-low p-6 rounded-xl border-l border-primary/20">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-semibold">Realized PnL</p>
+<div class="flex items-end gap-2">
+<h3 class="text-2xl font-bold headline-font text-primary">+$1,124.80</h3>
+<span class="text-xs text-on-surface-variant mb-1">Total</span>
+</div>
+<p class="text-[10px] text-primary mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="trending_up">trending_up</span>
+                            +12.4% vs last week
+                        </p>
+</div>
+<!-- Win Rate -->
+<div class="bg-surface-container-low p-6 rounded-xl border-l border-primary/20">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-2 font-semibold">Win Rate</p>
+<div class="flex items-end gap-2">
+<h3 class="text-2xl font-bold headline-font text-on-surface">68.4%</h3>
+<span class="text-xs text-on-surface-variant mb-1">Avg</span>
+</div>
+<div class="flex gap-1 mt-3">
+<div class="h-1.5 w-6 bg-primary rounded-full"></div>
+<div class="h-1.5 w-6 bg-primary rounded-full"></div>
+<div class="h-1.5 w-6 bg-primary rounded-full"></div>
+<div class="h-1.5 w-6 bg-primary rounded-full"></div>
+<div class="h-1.5 w-6 bg-outline-variant/20 rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Bot Controls -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-3">
+<button class="flex-1 bg-gradient-to-r from-[#b7c4ff] to-[#0052ff] text-on-primary-fixed p-4 rounded-xl font-black headline-font text-lg tracking-wider flex items-center justify-center gap-3 transition-transform active:scale-[0.98] shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        START BOT
+                    </button>
+<button class="flex-1 bg-surface-container-high hover:bg-error/10 border border-error/20 text-error p-4 rounded-xl font-black headline-font text-lg tracking-wider flex items-center justify-center gap-3 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">stop</span>
+                        STOP BOT
+                    </button>
+</div>
+</div>
+<!-- Middle Row: Strategy & Logic -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Strategy Config -->
+<div class="col-span-12 lg:col-span-7 space-y-8">
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-sm font-bold headline-font uppercase tracking-widest text-[#b7c4ff]">Execution Engine</h2>
+<div class="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary">STRATEGY ALPHA</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Trading Focus -->
+<div class="bg-surface-container-low p-5 rounded-xl border border-outline-variant/10">
+<label class="text-[10px] text-on-surface-variant uppercase tracking-widest block mb-4">Trading Focus</label>
+<div class="flex gap-2">
+<button class="flex-1 py-2 px-4 rounded bg-[#2a2a2a] border border-[#b7c4ff] text-[#b7c4ff] text-xs font-bold transition-all">BTC/USDT</button>
+<button class="flex-1 py-2 px-4 rounded bg-surface-container-low border border-outline-variant/20 text-on-surface-variant text-xs font-medium hover:border-primary/50 transition-all">ETH/USDT</button>
+</div>
+</div>
+<!-- Execution Timer -->
+<div class="bg-surface-container-low p-5 rounded-xl border border-outline-variant/10">
+<label class="text-[10px] text-on-surface-variant uppercase tracking-widest block mb-4">Execution Delay</label>
+<div class="flex items-center justify-between">
+<span class="text-xl font-bold text-on-surface headline-font">30s</span>
+<div class="flex gap-1">
+<button class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center hover:bg-primary/20 text-on-surface transition-all">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center hover:bg-primary/20 text-on-surface transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Allocation Logic -->
+<div class="mt-6 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+<label class="text-[10px] text-on-surface-variant uppercase tracking-widest block mb-6">Capital Allocation Logic</label>
+<div class="flex items-center justify-between mb-8">
+<div class="flex gap-4">
+<button class="flex items-center gap-2 text-primary font-bold">
+<span class="w-4 h-4 rounded-full border-4 border-primary bg-background"></span>
+<span class="text-xs uppercase">Fixed Amount</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant font-medium opacity-60">
+<span class="w-4 h-4 rounded-full border-2 border-outline-variant bg-background"></span>
+<span class="text-xs uppercase">Percentage %</span>
+</button>
+</div>
+<div class="text-2xl font-bold headline-font text-on-surface">$5,000.00</div>
+</div>
+<div class="relative w-full h-2 bg-surface-container-highest rounded-full">
+<div class="absolute top-0 left-0 h-full w-1/2 bg-primary rounded-full"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-on-surface shadow-lg border-2 border-primary"></div>
+</div>
+<div class="flex justify-between mt-4">
+<span class="text-[10px] text-on-surface-variant font-mono">$100</span>
+<span class="text-[10px] text-on-surface-variant font-mono">$10,000</span>
+</div>
+</div>
+</section>
+<!-- API Management -->
+<section class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-sm font-bold headline-font uppercase tracking-widest text-on-surface">API Connection</h2>
+<span class="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20 text-[10px] font-bold text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                                CONNECTED
+                            </span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 bg-surface-container-high rounded-lg border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="vpn_key">vpn_key</span>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold">Binance Master Key</p>
+<p class="text-xs font-mono text-on-surface mt-0.5">•••• •••• •••• 8291</p>
+</div>
+</div>
+<button class="text-[10px] font-bold text-primary hover:underline transition-all">MANAGE</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Live Event Log -->
+<div class="col-span-12 lg:col-span-5 flex flex-col h-full">
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/10 flex flex-col h-[640px]">
+<div class="p-6 border-b border-outline-variant/15 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+<h2 class="text-sm font-bold headline-font uppercase tracking-widest text-on-surface">Live Event Log</h2>
+</div>
+<button class="p-1.5 hover:bg-surface-container-high rounded text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+<!-- Log Item -->
+<div class="flex items-start gap-4 group">
+<span class="text-[10px] font-mono text-on-surface-variant pt-1">14:02:11</span>
+<div class="flex-1 space-y-1">
+<span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black bg-primary/10 text-primary border border-primary/20">[SIGNAL]</span>
+<p class="text-xs text-on-surface leading-relaxed">RSI divergence detected on 15m timeframe. BTC/USDT momentum shifting bullish.</p>
+</div>
+</div>
+<!-- Log Item -->
+<div class="flex items-start gap-4 group">
+<span class="text-[10px] font-mono text-on-surface-variant pt-1">14:02:30</span>
+<div class="flex-1 space-y-1">
+<span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black bg-primary/20 text-primary border border-primary/30">[BUY]</span>
+<p class="text-xs text-on-surface leading-relaxed">Executing Market Buy order for 0.12 BTC at $42,284.12. Allocation applied.</p>
+</div>
+</div>
+<!-- Log Item -->
+<div class="flex items-start gap-4 group opacity-60">
+<span class="text-[10px] font-mono text-on-surface-variant pt-1">14:03:00</span>
+<div class="flex-1 space-y-1">
+<span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black bg-outline-variant/20 text-on-surface-variant border border-outline-variant/30">[WAIT]</span>
+<p class="text-xs text-on-surface-variant leading-relaxed">Monitoring price action. Next execution delay window in 28s.</p>
+</div>
+</div>
+<!-- Log Item -->
+<div class="flex items-start gap-4 group">
+<span class="text-[10px] font-mono text-on-surface-variant pt-1">14:05:42</span>
+<div class="flex-1 space-y-1">
+<span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black bg-tertiary-container/20 text-tertiary border border-tertiary/30">[SELL]</span>
+<p class="text-xs text-on-surface leading-relaxed">Take profit target hit. Executing Sell order for 0.05 BTC.</p>
+</div>
+</div>
+<!-- Log Item -->
+<div class="flex items-start gap-4 group">
+<span class="text-[10px] font-mono text-on-surface-variant pt-1">14:08:15</span>
+<div class="flex-1 space-y-1">
+<span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black bg-surface-container-highest text-on-surface border border-outline-variant/30">[SYSTEM]</span>
+<p class="text-xs text-on-surface leading-relaxed">Balance snapshot updated. Trading parameters verified by engine.</p>
+</div>
+</div>
+<!-- Repeat visual for fill -->
+<div class="flex items-start gap-4 group opacity-40">
+<span class="text-[10px] font-mono text-on-surface-variant pt-1">13:55:02</span>
+<div class="flex-1 space-y-1">
+<span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black bg-error/10 text-error border border-error/20">[CLOSE]</span>
+<p class="text-xs text-on-surface-variant leading-relaxed">Closing position due to trailing stop activation at $42,100.</p>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+<span class="text-[10px] font-mono text-on-surface-variant">LISTENING TO WEBSOCKET STREAM...</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Visual Polish: Kinetic Layering (Absolute positioned background glow) -->
+<div class="fixed top-0 right-0 w-[800px] h-[800px] bg-primary-container/5 rounded-full blur-[160px] -z-10 pointer-events-none"></div>
+<div class="fixed bottom-0 left-64 w-[600px] h-[600px] bg-tertiary-container/5 rounded-full blur-[140px] -z-10 pointer-events-none"></div>
+</body></html>
