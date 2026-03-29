@@ -25,20 +25,23 @@ app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
 
 # ── Bot state ─────────────────────────────────────────────────────────────────
 
-_bot_thread: threading.Thread | None = None
-_stop_event = threading.Event()
+# Each running pair gets its own thread, stop event, and strategy reference.
+_pair_threads: dict = {}       # symbol → Thread
+_pair_stop_events: dict = {}   # symbol → threading.Event
+_pair_strategy_refs: dict = {} # symbol → Strategy
+
 _bot_status = {
     "running": False,
     "started_at": None,
+    "pairs": [],       # list of active symbols
     "config": {},
     "error": None,
 }
-_strategy_ref = None  # live reference to running Strategy instance
 
 
-def _run_bot(cfg: dict) -> None:
-    """Target function for the bot background thread."""
-    global _bot_status, _strategy_ref
+def _run_bot(cfg: dict, stop_event: threading.Event, symbol: str) -> None:
+    """Target function for a single-pair bot thread."""
+    global _bot_status, _pair_strategy_refs
     try:
         from exchange_client import build_client
         from execution import ExecutionEngine
@@ -55,16 +58,21 @@ def _run_bot(cfg: dict) -> None:
         risk = RiskManager(cfg, client)
         engine = ExecutionEngine(cfg, client)
         strat = Strategy(cfg, client, risk, engine)
-        _strategy_ref = strat
-        strat.run_forever(stop_event=_stop_event)
+        _pair_strategy_refs[symbol] = strat
+        strat.run_forever(stop_event=stop_event)
 
     except Exception as exc:
         _bot_status["error"] = str(exc)
-        logger.error("[App] Bot thread crashed", exc)
+        logger.error(f"[App] Bot thread crashed ({symbol})", exc)
     finally:
-        _strategy_ref = None
-        _bot_status["running"] = False
-        _bot_status["started_at"] = None
+        _pair_strategy_refs.pop(symbol, None)
+        _pair_threads.pop(symbol, None)
+        _pair_stop_events.pop(symbol, None)
+        if symbol in (_bot_status.get("pairs") or []):
+            _bot_status["pairs"].remove(symbol)
+        if not _bot_status["pairs"]:
+            _bot_status["running"] = False
+            _bot_status["started_at"] = None
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -81,10 +89,7 @@ def status():
 
 @app.route("/start", methods=["POST"])
 def start():
-    global _bot_thread, _stop_event, _bot_status
-
-    if _bot_status["running"]:
-        return jsonify({"ok": False, "error": "Bot is already running."}), 400
+    global _bot_status
 
     if not CONFIG_PATH.exists():
         return jsonify({"ok": False, "error": f"config.yaml not found at {CONFIG_PATH}"}), 500
@@ -94,11 +99,16 @@ def start():
     api_key = data.get("api_key", "").strip()
     api_secret = data.get("api_secret", "").strip()
     exchange_name = data.get("exchange_name", "binanceth").strip()
-    token = data.get("token", "BTC/USDT").strip()
+    # Accept either a single token string or a list of tokens
+    tokens_raw = data.get("tokens", data.get("token", "BTC/USDT"))
+    tokens = [t.strip() for t in (tokens_raw if isinstance(tokens_raw, list) else [tokens_raw]) if t.strip()]
+    if not tokens:
+        return jsonify({"ok": False, "error": "At least one trading pair is required."}), 400
+
     delay = int(data.get("delay", 45))
     profit_target = float(data.get("profit_target", 0.5))
     limit_sell_offset = float(data.get("limit_sell_offset", 0.1))
-    amount_type = data.get("amount_type", "fixed")   # fixed | percent
+    amount_type = data.get("amount_type", "fixed")
     amount_value = float(data.get("amount_value", 100))
     min_balance = float(data.get("min_balance", 50))
     min_liquidity = float(data.get("min_liquidity", 1000))
@@ -115,41 +125,52 @@ def start():
     if api_secret:
         os.environ["EXCHANGE_API_SECRET"] = api_secret
 
+    # Base config shared by all pairs (symbol will be overridden per thread)
     with open(CONFIG_PATH) as fh:
-        cfg = yaml.safe_load(fh)
+        base_cfg = yaml.safe_load(fh)
 
-    cfg["mode"] = mode
-    cfg["exchange"]["name"] = exchange_name
-    cfg["exchange"]["symbol"] = token
-    cfg["strategy"]["sell_delay_seconds"] = delay
-    cfg["strategy"]["profit_target_pct"] = profit_target
-    cfg["strategy"]["limit_sell_offset_pct"] = limit_sell_offset
-    cfg["strategy"]["loop_delay_seconds"] = loop_delay
-    cfg["logging"]["log_file"] = LOG_FILE
-
-    cfg["_ui"] = {
-        "amount_type": amount_type,
-        "amount_value": amount_value,
-    }
-
+    base_cfg["mode"] = mode
+    base_cfg["exchange"]["name"] = exchange_name
+    base_cfg["strategy"]["sell_delay_seconds"] = delay
+    base_cfg["strategy"]["profit_target_pct"] = profit_target
+    base_cfg["strategy"]["limit_sell_offset_pct"] = limit_sell_offset
+    base_cfg["strategy"]["loop_delay_seconds"] = loop_delay
+    base_cfg["strategy"]["strategy_mode"] = strategy_mode
+    base_cfg["logging"]["log_file"] = LOG_FILE
+    base_cfg["logging"]["level"] = "INFO"
+    base_cfg["_ui"] = {"amount_type": amount_type, "amount_value": amount_value}
     if amount_type == "fixed":
-        cfg["risk"]["max_position_size_usd"] = amount_value
+        base_cfg["risk"]["max_position_size_usd"] = amount_value
     else:
-        cfg["_ui"]["percent"] = amount_value / 100.0
+        base_cfg["_ui"]["percent"] = amount_value / 100.0
+    base_cfg["risk"]["min_balance_usd"] = min_balance
+    base_cfg["risk"]["min_order_book_depth_usd"] = min_liquidity
+    base_cfg["risk"]["max_trades_per_hour"] = max_trades_per_hour
 
-    cfg["risk"]["min_balance_usd"] = min_balance
-    cfg["risk"]["min_order_book_depth_usd"] = min_liquidity
-    cfg["risk"]["max_trades_per_hour"] = max_trades_per_hour
-    cfg["strategy"]["strategy_mode"] = strategy_mode
-    cfg["logging"]["level"] = "INFO"
+    started = []
+    import copy
+    for symbol in tokens:
+        if symbol in _pair_threads and _pair_threads[symbol].is_alive():
+            continue  # already running for this pair
+        cfg = copy.deepcopy(base_cfg)
+        cfg["exchange"]["symbol"] = symbol
+        stop_ev = threading.Event()
+        _pair_stop_events[symbol] = stop_ev
+        t = threading.Thread(target=_run_bot, args=(cfg, stop_ev, symbol), daemon=True)
+        _pair_threads[symbol] = t
+        t.start()
+        started.append(symbol)
 
-    _stop_event.clear()
+    if not started and _bot_status["running"]:
+        return jsonify({"ok": False, "error": "All selected pairs are already running."}), 400
+
     _bot_status.update({
         "running": True,
         "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "error": None,
+        "pairs": list(set((_bot_status.get("pairs") or []) + started)),
         "config": {
-            "token": token,
+            "tokens": tokens,
             "delay": delay,
             "profit_target": profit_target,
             "limit_sell_offset": limit_sell_offset,
@@ -164,10 +185,7 @@ def start():
         },
     })
 
-    _bot_thread = threading.Thread(target=_run_bot, args=(cfg,), daemon=True)
-    _bot_thread.start()
-
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "started": started})
 
 
 @app.route("/events")
@@ -207,8 +225,8 @@ def update_config():
     strategy_mode = data.get("strategy_mode", "signal")
     loop_delay = float(data.get("loop_delay", 0))
 
-    if _strategy_ref is not None:
-        _strategy_ref.update_settings(
+    for strat in list(_pair_strategy_refs.values()):
+        strat.update_settings(
             delay=delay,
             profit_target=profit_target,
             limit_sell_offset=limit_sell_offset,
@@ -350,49 +368,22 @@ def export_log():
 
 @app.route("/force_buy", methods=["POST"])
 def force_buy():
-    """Trigger an immediate market buy, bypassing the signal check."""
-    if not _bot_status["running"]:
+    """Trigger an immediate market buy on all running pairs, bypassing the signal check."""
+    if not _bot_status["running"] or not _pair_strategy_refs:
         return jsonify({"ok": False, "error": "Bot is not running."}), 400
 
-    def _do_force_buy():
+    def _do_force_buy(symbol: str, strat):
         try:
-            from exchange_client import build_client
-            from execution import ExecutionEngine
-            from risk_manager import RiskManager
-            from strategy import BuySignal, Strategy
-
-            with open(CONFIG_PATH) as fh:
-                cfg = yaml.safe_load(fh)
-
-            running_cfg = _bot_status.get("config", {})
-            cfg["mode"] = running_cfg.get("mode", cfg.get("mode", "paper"))
-            cfg["exchange"]["symbol"] = running_cfg.get("token", cfg["exchange"]["symbol"])
-            cfg["strategy"]["sell_delay_seconds"] = running_cfg.get("delay", 45)
-            cfg["strategy"]["profit_target_pct"] = running_cfg.get("profit_target", 0.5)
-            cfg["strategy"]["limit_sell_offset_pct"] = running_cfg.get("limit_sell_offset", 0.1)
-            amount_type = running_cfg.get("amount_type", "fixed")
-            amount_value = float(running_cfg.get("amount_value", 100))
-            cfg["_ui"] = {
-                "amount_type": amount_type,
-                "amount_value": amount_value,
-                "percent": amount_value / 100.0,
-            }
-            if amount_type == "fixed":
-                cfg["risk"]["max_position_size_usd"] = amount_value
-
-            client = build_client(cfg)
-            risk = RiskManager(cfg, client)
-            engine = ExecutionEngine(cfg, client)
-            symbol = cfg["exchange"]["symbol"]
-            strat = Strategy(cfg, client, risk, engine)
-            book = client.get_order_book(symbol)
+            from strategy import BuySignal
+            book = strat._client.get_order_book(symbol)
             qty = strat._calc_qty(book.mid_price)
             signal = BuySignal(symbol=symbol, suggested_quantity_base=qty, source="force_buy")
             strat.run_trade_cycle(signal, book)
         except Exception as exc:
-            logger.error("[App] Force buy failed", exc)
+            logger.error(f"[App] Force buy failed ({symbol})", exc)
 
-    threading.Thread(target=_do_force_buy, daemon=True).start()
+    for sym, strat in list(_pair_strategy_refs.items()):
+        threading.Thread(target=_do_force_buy, args=(sym, strat), daemon=True).start()
     return jsonify({"ok": True})
 
 
@@ -401,9 +392,12 @@ def stop():
     global _bot_status
     if not _bot_status["running"]:
         return jsonify({"ok": False, "error": "Bot is not running."}), 400
-    _stop_event.set()
+    # Signal all running pair threads to stop
+    for ev in list(_pair_stop_events.values()):
+        ev.set()
     _bot_status["running"] = False
     _bot_status["started_at"] = None
+    _bot_status["pairs"] = []
     return jsonify({"ok": True})
 
 
