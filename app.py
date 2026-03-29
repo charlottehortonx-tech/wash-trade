@@ -104,6 +104,7 @@ def start():
     min_liquidity = float(data.get("min_liquidity", 1000))
     max_trades_per_hour = int(data.get("max_trades_per_hour", 30))
     strategy_mode = data.get("strategy_mode", "signal")
+    loop_delay = float(data.get("loop_delay", 0))
     mode = data.get("mode", "live")
 
     if mode == "live" and (not api_key or not api_secret):
@@ -123,6 +124,7 @@ def start():
     cfg["strategy"]["sell_delay_seconds"] = delay
     cfg["strategy"]["profit_target_pct"] = profit_target
     cfg["strategy"]["limit_sell_offset_pct"] = limit_sell_offset
+    cfg["strategy"]["loop_delay_seconds"] = loop_delay
     cfg["logging"]["log_file"] = LOG_FILE
 
     cfg["_ui"] = {
@@ -155,6 +157,7 @@ def start():
             "min_liquidity": min_liquidity,
             "max_trades_per_hour": max_trades_per_hour,
             "strategy_mode": strategy_mode,
+            "loop_delay": loop_delay,
             "amount_type": amount_type,
             "amount_value": amount_value,
             "mode": mode,
@@ -202,6 +205,7 @@ def update_config():
     min_liquidity = float(data.get("min_liquidity", 1000))
     max_trades_per_hour = int(data.get("max_trades_per_hour", 30))
     strategy_mode = data.get("strategy_mode", "signal")
+    loop_delay = float(data.get("loop_delay", 0))
 
     if _strategy_ref is not None:
         _strategy_ref.update_settings(
@@ -214,6 +218,7 @@ def update_config():
             min_liquidity=min_liquidity,
             max_trades_per_hour=max_trades_per_hour,
             strategy_mode=strategy_mode,
+            loop_delay=loop_delay,
         )
 
     _bot_status["config"].update({
@@ -226,6 +231,7 @@ def update_config():
         "min_liquidity": min_liquidity,
         "max_trades_per_hour": max_trades_per_hour,
         "strategy_mode": strategy_mode,
+        "loop_delay": loop_delay,
     })
 
     return jsonify({"ok": True})

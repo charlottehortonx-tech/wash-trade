@@ -69,6 +69,7 @@ class Strategy:
             cfg.get("strategy", {}).get("signal_poll_interval_seconds", 5)
         )
         self._strategy_mode: str = cfg.get("strategy", {}).get("strategy_mode", "signal")
+        self._loop_delay: float = float(cfg.get("strategy", {}).get("loop_delay_seconds", 0))
         ui_cfg = cfg.get("_ui", {})
         self._amount_type: str = ui_cfg.get("amount_type", "fixed")
         self._amount_value: float = float(ui_cfg.get("amount_value", 100.0))
@@ -85,11 +86,13 @@ class Strategy:
         min_liquidity: float = 1000.0,
         max_trades_per_hour: int = 30,
         strategy_mode: str = "signal",
+        loop_delay: float = 0,
     ) -> None:
         self._amount_type = amount_type
         self._amount_value = amount_value
         self._amount_pct = amount_value / 100.0
         self._strategy_mode = strategy_mode
+        self._loop_delay = loop_delay
         self._engine.update_settings(delay, profit_target, limit_sell_offset)
         self._risk.update_settings(
             min_balance, min_liquidity,
@@ -235,8 +238,11 @@ class Strategy:
                         f"[Strategy] Timer cycle started  qty={qty}"
                     )
                     self.run_trade_cycle(signal, book)
-                    # No inter-cycle sleep — sell_delay already controls hold time.
-                    # Skip the sleep at the bottom of the loop.
+                    if self._loop_delay > 0:
+                        logger.info(
+                            f"[Strategy] Loop delay {self._loop_delay:.0f}s — waiting before next cycle"
+                        )
+                        time.sleep(self._loop_delay)
                     continue
 
                 # Signal mode (default)
