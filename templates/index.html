@@ -88,7 +88,7 @@
     <span class="text-xl font-black tracking-tighter text-slate-200 uppercase">Obsidian Architect</span>
     <nav class="hidden md:flex gap-6 text-sm">
       <span class="text-slate-500 px-2 py-1">Portfolio</span>
-      <span class="text-blue-400 font-bold">BTC/USDT</span>
+      <span class="text-blue-400 font-bold" id="header-pairs">BTC/USDT</span>
       <span class="text-slate-500 flex items-center gap-1" id="header-status">
         <span class="w-1.5 h-1.5 rounded-full bg-outline" id="header-dot"></span>
         <span id="header-status-text">Idle</span>
@@ -209,25 +209,30 @@
       <div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant/10">
         <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Trading Focus</h3>
         <div class="grid grid-cols-2 gap-3" id="token-grid">
-          <button onclick="selectToken(this,'BTC/USDT')" data-token="BTC/USDT"
+          <button onclick="toggleToken(this,'BTC/USDT')" data-token="BTC/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary">
             <span class="font-bold tabular-nums">BTC/USDT</span>
-            <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">check_circle</span>
+            <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">check_box</span>
           </button>
-          <button onclick="selectToken(this,'ETH/USDT')" data-token="ETH/USDT"
+          <button onclick="toggleToken(this,'ETH/USDT')" data-token="ETH/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
             <span class="font-bold tabular-nums">ETH/USDT</span>
-            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+            <span class="material-symbols-outlined text-sm">check_box_outline_blank</span>
           </button>
-          <button onclick="selectToken(this,'SOL/USDT')" data-token="SOL/USDT"
+          <button onclick="toggleToken(this,'SOL/USDT')" data-token="SOL/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
             <span class="font-bold tabular-nums">SOL/USDT</span>
-            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+            <span class="material-symbols-outlined text-sm">check_box_outline_blank</span>
           </button>
-          <button onclick="selectToken(this,'BNB/USDT')" data-token="BNB/USDT"
+          <button onclick="toggleToken(this,'BNB/USDT')" data-token="BNB/USDT"
             class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
             <span class="font-bold tabular-nums">BNB/USDT</span>
-            <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+            <span class="material-symbols-outlined text-sm">check_box_outline_blank</span>
+          </button>
+          <button onclick="toggleToken(this,'USDC/USDT')" data-token="USDC/USDT"
+            class="token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors">
+            <span class="font-bold tabular-nums">USDC/USDT</span>
+            <span class="material-symbols-outlined text-sm">check_box_outline_blank</span>
           </button>
         </div>
       </div>
@@ -483,7 +488,7 @@
   // ── State ────────────────────────────────────────────────────────────────
   let mode = 'live';
   let amountType = 'fixed';
-  let selectedToken = 'BTC/USDT';
+  let selectedTokens = new Set(['BTC/USDT']);
   let strategyMode = 'signal';
   let tradeCount = 0;
 
@@ -522,17 +527,20 @@
     document.getElementById('loop-delay-field').style.display = isTimer ? '' : 'none';
   }
 
-  // ── Token ─────────────────────────────────────────────────────────────────
-  function selectToken(el, tok) {
-    selectedToken = tok;
-    document.querySelectorAll('.token-btn').forEach(b => {
-      const active = b.dataset.token === tok;
-      b.className = active
-        ? 'token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary'
-        : 'token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors';
-      b.querySelector('.material-symbols-outlined').textContent = active ? 'check_circle' : 'radio_button_unchecked';
-      b.querySelector('.material-symbols-outlined').style.fontVariationSettings = active ? "'FILL' 1" : "'FILL' 0";
-    });
+  // ── Token (multi-select) ──────────────────────────────────────────────────
+  function toggleToken(el, tok) {
+    if (selectedTokens.has(tok)) {
+      if (selectedTokens.size === 1) return; // keep at least one selected
+      selectedTokens.delete(tok);
+    } else {
+      selectedTokens.add(tok);
+    }
+    const active = selectedTokens.has(tok);
+    el.className = active
+      ? 'token-btn flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/40 rounded text-primary'
+      : 'token-btn flex items-center justify-between px-4 py-3 bg-surface-container-lowest border border-outline-variant/20 rounded text-on-surface-variant hover:border-outline-variant transition-colors';
+    el.querySelector('.material-symbols-outlined').textContent = active ? 'check_box' : 'check_box_outline_blank';
+    el.querySelector('.material-symbols-outlined').style.fontVariationSettings = active ? "'FILL' 1" : "'FILL' 0";
   }
 
   // ── Amount Type ───────────────────────────────────────────────────────────
@@ -587,7 +595,7 @@
       exchange_name:     document.getElementById('exchange-name').value,
       api_key:           document.getElementById('api-key').value.trim(),
       api_secret:        document.getElementById('api-secret').value.trim(),
-      token:             selectedToken,
+      tokens:            Array.from(selectedTokens),
       delay:             parseInt(document.getElementById('delay-val').value) || 45,
       profit_target:     parseFloat(document.getElementById('profit-val').value) || 0.5,
       limit_sell_offset: parseFloat(document.getElementById('limit-sell-val').value) || 0.1,
@@ -656,6 +664,11 @@
     // Stats
     if (data.config && data.config.mode) {
       document.getElementById('stat-mode').textContent = data.config.mode.toUpperCase();
+    }
+
+    // Update header pairs display
+    if (data.pairs && data.pairs.length > 0) {
+      document.getElementById('header-pairs').textContent = data.pairs.join(' · ');
     }
 
     if (data.error) { showToast(data.error); document.getElementById('notif-dot').style.display = 'block'; }
