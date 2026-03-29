@@ -21,6 +21,7 @@ strategy:
                                   #   signal: wait for get_buy_signal() before each buy
                                   #   timer:  buy immediately, sell after delay, repeat
   sell_delay_seconds: 45          # seconds to hold between buy fill and sell
+  loop_delay_seconds: 0           # timer mode only: seconds to wait between cycles (0 = no delay)
   profit_target_pct: 0.5          # if price is >= entry + 0.5%  →  market sell
   limit_sell_offset_pct: 0.1      # otherwise                    →  limit sell at entry + 0.1%
   allow_overlapping_positions: false
